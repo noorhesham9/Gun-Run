@@ -4,15 +4,13 @@ import java.io.*;
 import javax.imageio.ImageIO;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.KeyAdapter;
-import java.awt.event.KeyEvent;
 import java.util.HashMap;
 import java.util.Map;
 
 
 public class GameApp {
     JFrame frame;
-    boolean mute = false;
+
 
     public static void main(String[] args) {
         new GameApp();
@@ -74,15 +72,13 @@ public class GameApp {
         JButton scoreBoard = createStyledButton("Scoreboard");
         JButton Instructions = createStyledButton("Instructions");
         JButton Mute = createStyledButton(Sound.isMuted() ? "Unmute" : "Mute");
-        Mute.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                Sound.toggleMute();
-                Mute.setText(Sound.isMuted() ? "Unmute" : "Mute");
-            }
+        Mute.addActionListener(e -> {
+            Sound.toggleMute();
+            Mute.setText(Sound.isMuted() ? "Unmute" : "Mute");
         });
         scoreBoard.addActionListener(e -> showScoreboard());
 
+        menuPanel.add(Box.createVerticalGlue());
         menuPanel.add(startButton);
         menuPanel.add(Box.createVerticalStrut(20));
         menuPanel.add(scoreBoard);
@@ -93,16 +89,10 @@ public class GameApp {
         menuPanel.add(Box.createVerticalGlue());
         frame.setContentPane(menuPanel);
         frame.revalidate();
-        startButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                Sound.playSound("Assets/mixkit-drums-of-war-2784.wav");
-
-                frame.dispose();
-                showPlayerMode();
-
-
-            }
+        startButton.addActionListener(e -> {
+            Sound.playSound("Assets/mixkit-drums-of-war-2784.wav");
+            frame.dispose();
+            showPlayerMode();
         });
         scoreBoard.addActionListener(new ActionListener() {
             @Override
@@ -110,7 +100,6 @@ public class GameApp {
                 Sound.stop();
                 Sound.playSound("Assets/mixkit-drums-of-war-2784.wav");
                 Sound.playBackground("Assets/metal slug 3 carry out(M4A_128K).wav");
-
             }
         });
     }
@@ -166,38 +155,25 @@ public class GameApp {
         JButton multiplePlayers = createStyledButton("Multi Players");
         JButton Back = createStyledButton("Back");
 
-        singlePlayer.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                Sound.playSound("Assets/mixkit-drums-of-war-2784.wav");
-
-                frame.dispose();
-                showNameInput(1);
-            }
+        singlePlayer.addActionListener(e -> {
+            Sound.playSound("Assets/mixkit-drums-of-war-2784.wav");
+            frame.dispose();
+            showNameInput(1);
         });
 
-        multiplePlayers.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                Sound.playSound("Assets/mixkit-drums-of-war-2784.wav");
-
-                frame.dispose();
-                showNameInput(2);
-            }
+        multiplePlayers.addActionListener(e -> {
+            Sound.playSound("Assets/mixkit-drums-of-war-2784.wav");
+            frame.dispose();
+            showNameInput(2);
         });
 
-        Back.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                Sound.playSound("Assets/mixkit-shotgun-long-pump-1666.wav");
-
-                frame.dispose();
-                new GameApp();
-
-
-            }
+        Back.addActionListener(e -> {
+            Sound.playSound("Assets/mixkit-shotgun-long-pump-1666.wav");
+            frame.dispose();
+            new GameApp();
         });
 
+        menuPanel.add(Box.createVerticalGlue());
         menuPanel.add(singlePlayer);
         menuPanel.add(Box.createVerticalStrut(20));
         menuPanel.add(multiplePlayers);
@@ -255,26 +231,22 @@ public class GameApp {
         inputPanel.add(gameTitle);
         inputPanel.add(Box.createVerticalStrut(30));
 
-        ActionListener startGameAction = new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                JTextField nameField1 = (JTextField) inputPanel.getClientProperty("nameField1");
-                JTextField nameField2 = (JTextField) inputPanel.getClientProperty("nameField2");
+        ActionListener startGameAction = e -> {
+            JTextField nameField1 = (JTextField) inputPanel.getClientProperty("nameField1");
+            JTextField nameField2 = (JTextField) inputPanel.getClientProperty("nameField2");
 
-                String p1 = nameField1.getText().trim();
-                String p2 = (nameField2 != null) ? nameField2.getText().trim() : "";
+            String p1 = nameField1.getText().trim();
+            String p2 = (nameField2 != null) ? nameField2.getText().trim() : "";
 
-                if (players == 1 && !p1.isEmpty()) {
-                    Sound.playSound("Assets/mixkit-drums-of-war-2784.wav");
-                    JOptionPane.showMessageDialog(nameFrame, "Starting Single Player Game for: " + p1);
-                    nameFrame.dispose();
-                } else if (players == 2 && !p1.isEmpty() && !p2.isEmpty()) {
-                    Sound.playSound("Assets/mixkit-drums-of-war-2784.wav");
-                    JOptionPane.showMessageDialog(nameFrame, "Starting Multi Player Game for: " + p1 + " and " + p2);
-                    nameFrame.dispose();
-                } else {
-                    JOptionPane.showMessageDialog(nameFrame, "Please enter all required usernames.", "Error", JOptionPane.ERROR_MESSAGE);
-                }
+            if (players == 1 && !p1.isEmpty()) {
+                saveScore(p1, -1);
+                nameFrame.dispose();
+            } else if (players == 2 && !p1.isEmpty() && !p2.isEmpty()) {
+                saveScore(p1, -1);
+                saveScore(p2, -1);
+                nameFrame.dispose();
+            } else {
+                JOptionPane.showMessageDialog(nameFrame, "Please enter all required usernames.", "Error", JOptionPane.ERROR_MESSAGE);
             }
         };
 
@@ -294,7 +266,7 @@ public class GameApp {
         inputPanel.add(nameField1);
         inputPanel.add(Box.createVerticalStrut(20));
 
-        JTextField nameField2 = null;
+        JTextField nameField2;
         if (players == 2) {
             JLabel label2 = new JLabel("Player 2 Username:");
             label2.setForeground(Color.WHITE);
@@ -407,7 +379,7 @@ public class GameApp {
                 writer.newLine();
             }
         } catch (IOException e) {
-            e.getMessage();
+            System.out.println(e.getMessage());
         }
     }
 
@@ -425,7 +397,7 @@ public class GameApp {
                 }
             }
         } catch (IOException e) {
-            e.printStackTrace();
+            System.out.println(e.getMessage());
         }
         return scores;
     }
