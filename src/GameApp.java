@@ -17,7 +17,6 @@ public class GameApp {
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setLocationRelativeTo(null);
 
-        // تحميل صورة الخلفية للقائمة
         Image bgImage = null;
         try {
             bgImage = ImageIO.read(new File("Assets/background1.png"));
@@ -25,8 +24,6 @@ public class GameApp {
             System.out.println("Image not found! Check file path.");
         }
         final Image finalBgImage = bgImage;
-
-        // بانل الرسم للخلفية
         JPanel menuPanel = new JPanel() {
             @Override
             protected void paintComponent(Graphics g) {
@@ -40,16 +37,11 @@ public class GameApp {
             }
         };
         menuPanel.setLayout(new BoxLayout(menuPanel, BoxLayout.Y_AXIS));
-
-        // إنشاء الأزرار
         JButton btnStart = createStyledButton("Start Game");
         JButton btnScoreboard = createStyledButton("Scoreboard");
         JButton btnInstructions = createStyledButton("Instructions");
         JButton btnExit = createStyledButton("Exit");
 
-        // --- الأكشنز (التفاعلات) ---
-
-        // 1. زر Start (مجرد طباعة حالياً عشان ملخبطش الفريق)
         btnStart.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -57,8 +49,6 @@ public class GameApp {
                 JOptionPane.showMessageDialog(frame, "Game Loop is coming soon!");
             }
         });
-
-        // 2. زر Instructions (التاسك بتاعتك - شغالة)
         btnInstructions.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -74,7 +64,6 @@ public class GameApp {
             }
         });
 
-        // 3. زر Exit
         btnExit.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -82,7 +71,6 @@ public class GameApp {
             }
         });
 
-        // إضافة العناصر للشاشة
         menuPanel.add(Box.createVerticalGlue());
         menuPanel.add(btnStart);
         menuPanel.add(Box.createVerticalStrut(20));
@@ -97,7 +85,6 @@ public class GameApp {
         frame.setVisible(true);
     }
 
-    // دالة تنسيق الأزرار
     private static JButton createStyledButton(String text) {
         JButton btn = new JButton(text);
         btn.setAlignmentX(Component.CENTER_ALIGNMENT);
