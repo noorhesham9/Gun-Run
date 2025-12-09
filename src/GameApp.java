@@ -4,6 +4,8 @@ import java.io.*;
 import javax.imageio.ImageIO;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -50,7 +52,7 @@ public class GameApp {
 
         JLabel gameTitle = new JLabel();
         try {
-            Image logoImage = ImageIO.read(new File("Assets/gun_run_logo.png"));
+            Image logoImage = ImageIO.read(new File("Assets/gun_run_logo2.png"));
             logoImage = logoImage.getScaledInstance(550, 150, Image.SCALE_SMOOTH);
             gameTitle.setIcon(new ImageIcon(logoImage));
             gameTitle.setOpaque(false);
@@ -142,7 +144,7 @@ public class GameApp {
 
         JLabel gameTitle = new JLabel();
         try {
-            Image logoImage = ImageIO.read(new File("Assets/gun_run_logo.png"));
+            Image logoImage = ImageIO.read(new File("Assets/gun_run_logo2.png"));
             logoImage = logoImage.getScaledInstance(550, 150, Image.SCALE_SMOOTH);
             gameTitle.setIcon(new ImageIcon(logoImage));
             gameTitle.setOpaque(false);
@@ -163,6 +165,26 @@ public class GameApp {
         JButton singlePlayer = createStyledButton("Single Player");
         JButton multiplePlayers = createStyledButton("Multi Players");
         JButton Back = createStyledButton("Back");
+
+        singlePlayer.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                Sound.playSound("Assets/mixkit-drums-of-war-2784.wav");
+
+                frame.dispose();
+                showNameInput(1);
+            }
+        });
+
+        multiplePlayers.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                Sound.playSound("Assets/mixkit-drums-of-war-2784.wav");
+
+                frame.dispose();
+                showNameInput(2);
+            }
+        });
 
         Back.addActionListener(new ActionListener() {
             @Override
@@ -186,6 +208,132 @@ public class GameApp {
         frame.add(menuPanel);
         frame.setVisible(true);
     }
+
+    void showNameInput(int players) {
+        JFrame nameFrame = new JFrame("Gun Run - Enter Names");
+        nameFrame.setSize(800, 600);
+        nameFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        nameFrame.setLocationRelativeTo(null);
+
+        Image bgImage = null;
+        try {
+            bgImage = ImageIO.read(new File("Assets/background1.png"));
+        } catch (Exception e) {
+            System.out.println("Image not found! Check file path.");
+        }
+        final Image finalBgImage = bgImage;
+
+        JPanel inputPanel = new JPanel() {
+            @Override
+            protected void paintComponent(Graphics g) {
+                super.paintComponent(g);
+                if (finalBgImage != null) {
+                    g.drawImage(finalBgImage, 0, 0, getWidth(), getHeight(), this);
+                }
+            }
+        };
+        inputPanel.setLayout(new BoxLayout(inputPanel, BoxLayout.Y_AXIS));
+        inputPanel.setOpaque(true);
+
+        JLabel gameTitle = new JLabel();
+        try {
+            Image logoImage = ImageIO.read(new File("Assets/gun_run_logo2.png"));
+            logoImage = logoImage.getScaledInstance(350, 100, Image.SCALE_SMOOTH);
+            gameTitle.setIcon(new ImageIcon(logoImage));
+            gameTitle.setOpaque(false);
+            gameTitle.setBackground(new Color(0, 0, 0, 0));
+        } catch (IOException e) {
+            gameTitle.setText("GUN RUN");
+            gameTitle.setFont(new Font("Arial", Font.BOLD, 60));
+            gameTitle.setForeground(Color.YELLOW);
+            gameTitle.setOpaque(false);
+            System.err.println("Error loading game logo image: " + e.getMessage() + ". Defaulting to text.");
+        }
+        gameTitle.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+        inputPanel.add(Box.createVerticalStrut(30));
+        inputPanel.add(gameTitle);
+        inputPanel.add(Box.createVerticalStrut(30));
+
+        ActionListener startGameAction = new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                JTextField nameField1 = (JTextField) inputPanel.getClientProperty("nameField1");
+                JTextField nameField2 = (JTextField) inputPanel.getClientProperty("nameField2");
+
+                String p1 = nameField1.getText().trim();
+                String p2 = (nameField2 != null) ? nameField2.getText().trim() : "";
+
+                if (players == 1 && !p1.isEmpty()) {
+                    Sound.playSound("Assets/mixkit-drums-of-war-2784.wav");
+                    JOptionPane.showMessageDialog(nameFrame, "Starting Single Player Game for: " + p1);
+                    nameFrame.dispose();
+                } else if (players == 2 && !p1.isEmpty() && !p2.isEmpty()) {
+                    Sound.playSound("Assets/mixkit-drums-of-war-2784.wav");
+                    JOptionPane.showMessageDialog(nameFrame, "Starting Multi Player Game for: " + p1 + " and " + p2);
+                    nameFrame.dispose();
+                } else {
+                    JOptionPane.showMessageDialog(nameFrame, "Please enter all required usernames.", "Error", JOptionPane.ERROR_MESSAGE);
+                }
+            }
+        };
+
+
+        JLabel label1 = new JLabel(players == 1 ? "Username:" : "Player 1 Username:");
+        label1.setForeground(Color.WHITE);
+        label1.setFont(new Font("Arial", Font.BOLD, 16));
+        label1.setAlignmentX(Component.CENTER_ALIGNMENT);
+        JTextField nameField1 = new JTextField(20);
+        nameField1.setMaximumSize(new Dimension(300, 30));
+        nameField1.setAlignmentX(Component.CENTER_ALIGNMENT);
+        nameField1.addActionListener(startGameAction);
+
+        inputPanel.putClientProperty("nameField1", nameField1);
+
+        inputPanel.add(label1);
+        inputPanel.add(nameField1);
+        inputPanel.add(Box.createVerticalStrut(20));
+
+        JTextField nameField2 = null;
+        if (players == 2) {
+            JLabel label2 = new JLabel("Player 2 Username:");
+            label2.setForeground(Color.WHITE);
+            label2.setFont(new Font("Arial", Font.BOLD, 16));
+            label2.setAlignmentX(Component.CENTER_ALIGNMENT);
+            nameField2 = new JTextField(20);
+            nameField2.setMaximumSize(new Dimension(300, 30));
+            nameField2.setAlignmentX(Component.CENTER_ALIGNMENT);
+            nameField2.addActionListener(startGameAction);
+
+            inputPanel.putClientProperty("nameField2", nameField2);
+
+            inputPanel.add(label2);
+            inputPanel.add(nameField2);
+            inputPanel.add(Box.createVerticalStrut(30));
+        }
+
+        JButton startBtn = createStyledButton("Enter");
+        startBtn.addActionListener(startGameAction);
+        startBtn.setForeground(Color.BLACK);
+
+        inputPanel.add(startBtn);
+        inputPanel.add(Box.createVerticalStrut(20));
+
+        JButton backBtn = createStyledButton("Back");
+        backBtn.addActionListener(e -> {
+            Sound.playSound("Assets/mixkit-shotgun-long-pump-1666.wav");
+            nameFrame.dispose();
+            showPlayerMode();
+        });
+        inputPanel.add(backBtn);
+        inputPanel.add(Box.createVerticalGlue());
+
+
+        nameFrame.add(inputPanel);
+        nameFrame.setVisible(true);
+        nameField1.requestFocusInWindow();
+    }
+
 
     void showScoreboard() {
         JPanel scorePanel = new JPanel();
