@@ -26,14 +26,6 @@ public class GameApp {
 
         frame.setVisible(true);
         Sound.playBackground("Assets/Metal Slug 2 Prehistoric Site(MP3_160K).wav");
-       /* if(mute==false) {
-            System.out.println("annnnnnnnnnn");
-    }else {
-            Sound.stop();
-            System.out.println("annnnnnnnnnnn22222222");
-        }
-*/
-
     }
 
     void mainMenu() {
@@ -56,6 +48,26 @@ public class GameApp {
         };
         menuPanel.setLayout(new BoxLayout(menuPanel, BoxLayout.Y_AXIS));
 
+        JLabel gameTitle = new JLabel();
+        try {
+            Image logoImage = ImageIO.read(new File("Assets/gun_run_logo.png"));
+            logoImage = logoImage.getScaledInstance(550, 150, Image.SCALE_SMOOTH);
+            gameTitle.setIcon(new ImageIcon(logoImage));
+            gameTitle.setOpaque(false);
+            gameTitle.setBackground(new Color(0, 0, 0, 0));
+        } catch (IOException e) {
+            gameTitle.setText("GUN RUN");
+            gameTitle.setFont(new Font("Arial", Font.BOLD, 60));
+            gameTitle.setForeground(Color.YELLOW);
+            gameTitle.setOpaque(false);
+            System.err.println("Error loading game logo image: " + e.getMessage() + ". Defaulting to text.");
+        }
+        gameTitle.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+        menuPanel.add(Box.createVerticalStrut(50));
+        menuPanel.add(gameTitle);
+        menuPanel.add(Box.createVerticalStrut(50));
+
         JButton startButton = createStyledButton("Start");
         JButton scoreBoard = createStyledButton("Scoreboard");
         JButton Instructions = createStyledButton("Instructions");
@@ -69,7 +81,6 @@ public class GameApp {
         });
         scoreBoard.addActionListener(e -> showScoreboard());
 
-        menuPanel.add(Box.createVerticalGlue());
         menuPanel.add(startButton);
         menuPanel.add(Box.createVerticalStrut(20));
         menuPanel.add(scoreBoard);
@@ -103,7 +114,7 @@ public class GameApp {
     }
 
     void showPlayerMode() {
-        JFrame frame = new JFrame("Select Player Mode");
+        JFrame frame = new JFrame("Gun Run - Select Player Mode");
         frame.setSize(800, 600);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setLocationRelativeTo(null);
@@ -129,6 +140,26 @@ public class GameApp {
 
         menuPanel.setLayout(new BoxLayout(menuPanel, BoxLayout.Y_AXIS));
 
+        JLabel gameTitle = new JLabel();
+        try {
+            Image logoImage = ImageIO.read(new File("Assets/gun_run_logo.png"));
+            logoImage = logoImage.getScaledInstance(550, 150, Image.SCALE_SMOOTH);
+            gameTitle.setIcon(new ImageIcon(logoImage));
+            gameTitle.setOpaque(false);
+            gameTitle.setBackground(new Color(0, 0, 0, 0));
+        } catch (IOException e) {
+            gameTitle.setText("GUN RUN");
+            gameTitle.setFont(new Font("Arial", Font.BOLD, 60));
+            gameTitle.setForeground(Color.YELLOW);
+            gameTitle.setOpaque(false);
+            System.err.println("Error loading game logo image: " + e.getMessage() + ". Defaulting to text.");
+        }
+        gameTitle.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+        menuPanel.add(Box.createVerticalStrut(50));
+        menuPanel.add(gameTitle);
+        menuPanel.add(Box.createVerticalStrut(50));
+
         JButton singlePlayer = createStyledButton("Single Player");
         JButton multiplePlayers = createStyledButton("Multi Players");
         JButton Back = createStyledButton("Back");
@@ -145,7 +176,6 @@ public class GameApp {
             }
         });
 
-        menuPanel.add(Box.createVerticalGlue());
         menuPanel.add(singlePlayer);
         menuPanel.add(Box.createVerticalStrut(20));
         menuPanel.add(multiplePlayers);
