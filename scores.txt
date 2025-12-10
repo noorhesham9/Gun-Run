@@ -7,5 +7,4 @@ wageeeh:-1
 fwrgev:-1
 mohamed:500
 she5 wageeh:-1
-hamada:50
-wageeh:-1
+wageh:-1

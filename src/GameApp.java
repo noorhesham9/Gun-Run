@@ -1,6 +1,5 @@
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.*;
 import javax.imageio.ImageIO;
@@ -10,7 +9,9 @@ import java.util.Map;
 public class GameApp {
     JFrame frame;
     JButton muteButton;
-    private static final Dimension MUTE_BUTTON_SIZE = new Dimension(110, 30);
+    private static final Dimension MUTE_BUTTON_SIZE = new Dimension(50, 50);
+    private static final String MUTE_ON_PATH = "Assets/MuteOn (1).png";
+    private static final String MUTE_OFF_PATH = "Assets/MuteOff (1).png";
 
     public static void main(String[] args) {
         new GameApp();
@@ -28,23 +29,38 @@ public class GameApp {
     }
 
     private JButton createMuteButton() {
-        JButton muteBtn = new JButton(Sound.isMuted() ? "Unmute" : "Mute");
-        muteBtn.setFont(new Font("Arial", Font.BOLD, 16));
+        JButton muteBtn = new JButton();
         muteBtn.setPreferredSize(MUTE_BUTTON_SIZE);
         muteBtn.setMaximumSize(MUTE_BUTTON_SIZE);
         muteBtn.setMinimumSize(MUTE_BUTTON_SIZE);
-        muteBtn.setBackground(new Color(20, 130, 140));
-        muteBtn.setForeground(Color.WHITE);
+        muteBtn.setOpaque(false);
+        muteBtn.setContentAreaFilled(false);
+        muteBtn.setBorderPainted(false);
         muteBtn.setFocusPainted(false);
+
+        updateMuteButtonIcon(muteBtn);
 
         muteBtn.addActionListener(e -> {
             Sound.toggleMute();
-            muteBtn.setText(Sound.isMuted() ? "Unmute" : "Mute");
-            muteBtn.setToolTipText(Sound.isMuted() ? "Unmute" : "Mute");
+            updateMuteButtonIcon(muteBtn);
         });
 
-        muteBtn.setToolTipText(Sound.isMuted() ? "Unmute" : "Mute");
         return muteBtn;
+    }
+
+    private void updateMuteButtonIcon(JButton button) {
+        String path = Sound.isMuted() ? MUTE_OFF_PATH : MUTE_ON_PATH;
+        try {
+            Image img = ImageIO.read(new File(path));
+            if (img != null) {
+                Image scaledImg = img.getScaledInstance(MUTE_BUTTON_SIZE.width, MUTE_BUTTON_SIZE.height, Image.SCALE_SMOOTH);
+                button.setIcon(new ImageIcon(scaledImg));
+            }
+        } catch (IOException e) {
+            button.setText(Sound.isMuted() ? "Unmute" : "Mute");
+            button.setFont(new Font("Arial", Font.BOLD, 12));
+            button.setToolTipText("Error loading sound icon");
+        }
     }
 
     void mainMenu() {
@@ -107,6 +123,8 @@ public class GameApp {
                             "2. Press 'Space' to Shoot.\n" +
                             "3. Avoid enemies and obstacles.\n" +
                             "4. Survive as long as possible!\n\n" +
+                            "Multiplayer Controls:\n" +
+                            "Player 2: A (Left), D (Right), F (Shoot).\n\n" +
                             "Good Luck, Soldier!",
                     "How to Play",
                     JOptionPane.INFORMATION_MESSAGE);
@@ -288,13 +306,13 @@ public class GameApp {
             if (players == 1 && !p1.isEmpty()) {
                 saveScore(p1, -1);
                 nameFrame.dispose();
-                showDifficultySelection();
+                showDifficultySelection(1);
 
             } else if (players == 2 && !p1.isEmpty() && !p2.isEmpty()) {
                 saveScore(p1, -1);
                 saveScore(p2, -1);
                 nameFrame.dispose();
-                showDifficultySelection();
+                showDifficultySelection(2);
 
             } else {
                 JOptionPane.showMessageDialog(nameFrame, "Please enter all required usernames.", "Error", JOptionPane.ERROR_MESSAGE);
@@ -302,7 +320,7 @@ public class GameApp {
         };
 
         JLabel label1 = new JLabel(players == 1 ? "Username:" : "Player 1 Username:");
-        label1.setForeground(Color.BLACK);
+        label1.setForeground(Color.RED);
         label1.setFont(new Font("Arial", Font.BOLD, 16));
         label1.setAlignmentX(Component.CENTER_ALIGNMENT);
         JTextField nameField1 = new JTextField(20);
@@ -318,7 +336,7 @@ public class GameApp {
 
         if (players == 2) {
             JLabel label2 = new JLabel("Player 2 Username:");
-            label2.setForeground(Color.BLACK);
+            label2.setForeground(Color.BLUE);
             label2.setFont(new Font("Arial", Font.BOLD, 16));
             label2.setAlignmentX(Component.CENTER_ALIGNMENT);
             JTextField nameField2 = new JTextField(20);
@@ -357,7 +375,7 @@ public class GameApp {
         nameField1.requestFocusInWindow();
     }
 
-    void showDifficultySelection() {
+    void showDifficultySelection(int players) {
         JFrame diffFrame = new JFrame("Gun Run - Select Difficulty");
         diffFrame.setSize(800, 600);
         diffFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -411,28 +429,30 @@ public class GameApp {
         JButton hardBtn = createStyledButton("Hard");
         JButton backBtn = createStyledButton("Back");
 
+        boolean isMulti = (players == 2);
+
         easyBtn.addActionListener(e -> {
             Sound.playSound("Assets/mixkit-drums-of-war-2784.wav");
             diffFrame.dispose();
-            new GameGlListener("Easy");
+            new GameGlListener("Easy", isMulti);
         });
 
         mediumBtn.addActionListener(e -> {
             Sound.playSound("Assets/mixkit-drums-of-war-2784.wav");
             diffFrame.dispose();
-            new GameGlListener("Medium");
+            new GameGlListener("Medium", isMulti);
         });
 
         hardBtn.addActionListener(e -> {
             Sound.playSound("Assets/mixkit-drums-of-war-2784.wav");
             diffFrame.dispose();
-            new GameGlListener("Hard");
+            new GameGlListener("Hard", isMulti);
         });
 
         backBtn.addActionListener(e -> {
             Sound.playSound("Assets/mixkit-shotgun-long-pump-1666.wav");
             diffFrame.dispose();
-            showNameInput(1);
+            showNameInput(players);
         });
 
         centerPanel.add(Box.createVerticalGlue());
