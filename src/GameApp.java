@@ -286,7 +286,7 @@ public class GameApp {
         centerPanel.add(gameTitle);
         centerPanel.add(Box.createVerticalStrut(30));
 
-        ActionListener startGameAction = e -> {
+        ActionListener nextStepAction = e -> {
             JTextField nameField1 = (JTextField) centerPanel.getClientProperty("nameField1");
             JTextField nameField2 = (JTextField) centerPanel.getClientProperty("nameField2");
 
@@ -296,13 +296,13 @@ public class GameApp {
             if (players == 1 && !p1.isEmpty()) {
                 saveScore(p1, -1);
                 nameFrame.dispose();
-                new MetalSlugListener();
+                showDifficultySelection();
 
             } else if (players == 2 && !p1.isEmpty() && !p2.isEmpty()) {
                 saveScore(p1, -1);
                 saveScore(p2, -1);
                 nameFrame.dispose();
-                new MetalSlugListener();
+                showDifficultySelection();
 
             } else {
                 JOptionPane.showMessageDialog(nameFrame, "Please enter all required usernames.", "Error", JOptionPane.ERROR_MESSAGE);
@@ -316,7 +316,7 @@ public class GameApp {
         JTextField nameField1 = new JTextField(20);
         nameField1.setMaximumSize(new Dimension(300, 30));
         nameField1.setAlignmentX(Component.CENTER_ALIGNMENT);
-        nameField1.addActionListener(startGameAction);
+        nameField1.addActionListener(nextStepAction);
 
         centerPanel.putClientProperty("nameField1", nameField1);
 
@@ -332,7 +332,7 @@ public class GameApp {
             JTextField nameField2 = new JTextField(20);
             nameField2.setMaximumSize(new Dimension(300, 30));
             nameField2.setAlignmentX(Component.CENTER_ALIGNMENT);
-            nameField2.addActionListener(startGameAction);
+            nameField2.addActionListener(nextStepAction);
 
             centerPanel.putClientProperty("nameField2", nameField2);
 
@@ -341,11 +341,11 @@ public class GameApp {
             centerPanel.add(Box.createVerticalStrut(30));
         }
 
-        JButton startBtn = createStyledButton("Enter");
-        startBtn.addActionListener(startGameAction);
-        startBtn.setForeground(Color.BLACK);
+        JButton nextBtn = createStyledButton("Next");
+        nextBtn.addActionListener(nextStepAction);
+        nextBtn.setForeground(Color.BLACK);
 
-        centerPanel.add(startBtn);
+        centerPanel.add(nextBtn);
         centerPanel.add(Box.createVerticalStrut(20));
 
         JButton backBtn = createStyledButton("Back");
@@ -363,6 +363,101 @@ public class GameApp {
         nameFrame.add(inputPanel);
         nameFrame.setVisible(true);
         nameField1.requestFocusInWindow();
+    }
+
+    void showDifficultySelection() {
+        JFrame diffFrame = new JFrame("Gun Run - Select Difficulty");
+        diffFrame.setSize(800, 600);
+        diffFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        diffFrame.setLocationRelativeTo(null);
+
+        Image bgImage = null;
+        try {
+            bgImage = ImageIO.read(new File("Assets/background1.png"));
+        } catch (Exception e) {
+            System.out.println(e.getMessage());
+        }
+        final Image finalBgImage = bgImage;
+
+        JPanel mainPanel = new JPanel(new BorderLayout()) {
+            @Override
+            protected void paintComponent(Graphics g) {
+                super.paintComponent(g);
+                if (finalBgImage != null) g.drawImage(finalBgImage, 0, 0, getWidth(), getHeight(), this);
+            }
+        };
+
+        JPanel topPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        topPanel.setOpaque(false);
+        topPanel.add(muteButton);
+
+        JPanel centerPanel = new JPanel();
+        centerPanel.setLayout(new BoxLayout(centerPanel, BoxLayout.Y_AXIS));
+        centerPanel.setOpaque(false);
+
+        JLabel gameTitle = new JLabel();
+        try {
+            Image logoImage = ImageIO.read(new File("Assets/gun_run_logo2.png"));
+            logoImage = logoImage.getScaledInstance(550, 150, Image.SCALE_SMOOTH);
+            gameTitle.setIcon(new ImageIcon(logoImage));
+            gameTitle.setOpaque(false);
+            gameTitle.setBackground(new Color(0, 0, 0, 0));
+        } catch (IOException e) {
+            gameTitle.setText("GUN RUN");
+            gameTitle.setFont(new Font("Arial", Font.BOLD, 60));
+            gameTitle.setForeground(Color.YELLOW);
+            gameTitle.setOpaque(false);
+        }
+        gameTitle.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+        centerPanel.add(Box.createVerticalStrut(50));
+        centerPanel.add(gameTitle);
+        centerPanel.add(Box.createVerticalStrut(50));
+
+        JButton easyBtn = createStyledButton("Easy");
+        JButton mediumBtn = createStyledButton("Medium");
+        JButton hardBtn = createStyledButton("Hard");
+        JButton backBtn = createStyledButton("Back");
+
+        easyBtn.addActionListener(e -> {
+            Sound.playSound("Assets/mixkit-drums-of-war-2784.wav");
+            diffFrame.dispose();
+            new MetalSlugListener("Easy");
+        });
+
+        mediumBtn.addActionListener(e -> {
+            Sound.playSound("Assets/mixkit-drums-of-war-2784.wav");
+            diffFrame.dispose();
+            new MetalSlugListener("Medium");
+        });
+
+        hardBtn.addActionListener(e -> {
+            Sound.playSound("Assets/mixkit-drums-of-war-2784.wav");
+            diffFrame.dispose();
+            new MetalSlugListener("Hard");
+        });
+
+        backBtn.addActionListener(e -> {
+            Sound.playSound("Assets/mixkit-shotgun-long-pump-1666.wav");
+            diffFrame.dispose();
+            showNameInput(1);
+        });
+
+        centerPanel.add(Box.createVerticalGlue());
+        centerPanel.add(easyBtn);
+        centerPanel.add(Box.createVerticalStrut(20));
+        centerPanel.add(mediumBtn);
+        centerPanel.add(Box.createVerticalStrut(20));
+        centerPanel.add(hardBtn);
+        centerPanel.add(Box.createVerticalStrut(20));
+        centerPanel.add(backBtn);
+        centerPanel.add(Box.createVerticalGlue());
+
+        mainPanel.add(topPanel, BorderLayout.NORTH);
+        mainPanel.add(centerPanel, BorderLayout.CENTER);
+
+        diffFrame.add(mainPanel);
+        diffFrame.setVisible(true);
     }
 
     void showScoreboard() {

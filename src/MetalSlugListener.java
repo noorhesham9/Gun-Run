@@ -17,6 +17,7 @@ public class MetalSlugListener implements GLEventListener, KeyListener, MouseLis
     int timerSeconds = 30;
     long lastTime;
     boolean isGameOver = false;
+    String difficultyLevel;
 
     GLCanvas glCanvas;
     FPSAnimator animator;
@@ -28,14 +29,23 @@ public class MetalSlugListener implements GLEventListener, KeyListener, MouseLis
     Rectangle exitBtnBounds = new Rectangle(35, 35, 30, 10);
     Rectangle pauseGameBtnBounds = new Rectangle(92, 92, 4, 4);
 
-    public MetalSlugListener() {
+    public MetalSlugListener(String difficulty) {
+        this.difficultyLevel = difficulty;
+        if(difficulty.equals("Easy")) {
+            timerSeconds = 60;
+        } else if(difficulty.equals("Medium")) {
+            timerSeconds = 30;
+        } else if(difficulty.equals("Hard")) {
+            timerSeconds = 15;
+        }
+
         GLCapabilities capabilities = new GLCapabilities();
         glCanvas = new GLCanvas(capabilities);
         glCanvas.addGLEventListener(this);
         glCanvas.addKeyListener(this);
         glCanvas.addMouseListener(this);
 
-        myFrame = new JFrame("Metal Slug - Game Mode");
+        myFrame = new JFrame("Metal Slug - Game Mode (" + difficulty + ")");
         myFrame.setLayout(new BorderLayout());
         myFrame.add(glCanvas, BorderLayout.CENTER);
 
