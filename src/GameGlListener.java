@@ -51,14 +51,23 @@ public class GameGlListener implements GLEventListener, KeyListener, MouseListen
     ArrayList<Texture> idleTextures = new ArrayList<>();
     ArrayList<Texture> walkingTextures = new ArrayList<>();
     ArrayList<Texture> shootingTextures = new ArrayList<>();
+    ArrayList<Texture> jumpTextures = new ArrayList<>();
     Texture bulletTexture;
 
     float playerX = 10;
     float playerY = 15;
+    float groundLevel = 15;
 
+    // Movement Flags
     boolean leftPressed = false;
     boolean rightPressed = false;
     boolean isWalking = false;
+
+    // Jump Physics
+    boolean isJumping = false;
+    float verticalVelocity = 0;
+    float gravity = 0.15f;
+    float jumpStrength = 3.2f;
 
     boolean isShooting = false;
     boolean facingRight = true;
@@ -161,6 +170,14 @@ public class GameGlListener implements GLEventListener, KeyListener, MouseListen
                 File f = new File("Assets/playerShooting/" + i + ".png");
                 if (!f.exists()) break;
                 shootingTextures.add(TextureIO.newTexture(f, true));
+                i++;
+            }
+
+            i = 1;
+            while (true) {
+                File f = new File("Assets/PlayerJumpUp/" + i + ".png");
+                if (!f.exists()) break;
+                jumpTextures.add(TextureIO.newTexture(f, true));
                 i++;
             }
 
@@ -377,6 +394,7 @@ public class GameGlListener implements GLEventListener, KeyListener, MouseListen
     private void drawGame(GL gl) {
         if (!isPaused && !isGameOver) {
 
+            // X-Axis Movement
             if (leftPressed) {
                 playerX -= 0.8f;
                 facingRight = false;
@@ -384,6 +402,18 @@ public class GameGlListener implements GLEventListener, KeyListener, MouseListen
             if (rightPressed) {
                 playerX += 0.8f;
                 facingRight = true;
+            }
+
+            // Y-Axis Physics (Gravity)
+            if (isJumping) {
+                playerY += verticalVelocity;
+                verticalVelocity -= gravity; // Apply gravity
+
+                if (playerY <= groundLevel) {
+                    playerY = groundLevel;
+                    isJumping = false;
+                    verticalVelocity = 0;
+                }
             }
 
             animateSprite(gl);
@@ -399,6 +429,8 @@ public class GameGlListener implements GLEventListener, KeyListener, MouseListen
             if (System.currentTimeMillis() - shootingStartTime > 300) {
                 isShooting = false;
             }
+        } else if (isJumping && !jumpTextures.isEmpty()) {
+            currentAnim = jumpTextures;
         } else if (isWalking) {
             currentAnim = walkingTextures;
         } else {
@@ -515,9 +547,16 @@ public class GameGlListener implements GLEventListener, KeyListener, MouseListen
             rightPressed = true;
             facingRight = true;
             isWalking = true;
+        } else if (e.getKeyCode() == KeyEvent.VK_UP) {
+            if (!isJumping) {
+                isJumping = true;
+                verticalVelocity = jumpStrength;
+                currentFrameIndex = 0; // Reset animation to start
+            }
         } else if (e.getKeyCode() == KeyEvent.VK_SPACE) {
             isShooting = true;
             shootingStartTime = System.currentTimeMillis();
+            currentFrameIndex = 0; // Reset animation to start
             float bulletStartX = facingRight ? playerX + 8 : playerX - 1;
             bullets.add(new Bullet(bulletStartX, playerY + 8, facingRight));
         } else if (e.getKeyCode() == KeyEvent.VK_ESCAPE) {
