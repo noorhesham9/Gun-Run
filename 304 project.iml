@@ -10,39 +10,31 @@
     <orderEntry type="module-library">
       <library>
         <CLASSES>
-          <root url="file://$MODULE_DIR$/../../../../../" />
+          <root url="jar://C:/Users/Downloads/JOGLwin/JOGLwin/lib64/jogl.jar!/" />
+          <root url="file://C:/Users/Downloads/JOGLwin/JOGLwin/lib64" />
         </CLASSES>
         <JAVADOC />
+        <NATIVE>
+          <root url="file://C:/Users/Downloads/JOGLwin/JOGLwin/lib64" />
+        </NATIVE>
         <SOURCES />
+        <jarDirectory url="file://C:/Users/Downloads/JOGLwin/JOGLwin/lib64" recursive="false" />
       </library>
     </orderEntry>
     <orderEntry type="module-library">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../../Downloads/JOGLwin/JOGLwin/lib64/jogl.jar!/" />
-          <root url="file://$MODULE_DIR$/../../../Downloads/JOGLwin/JOGLwin/lib64" />
+          <root url="jar://C:/Users/Downloads/JOGLwin/JOGLwin/lib64/gluegen-rt.jar!/" />
+          <root url="file://C:/Users/Downloads/JOGLwin/JOGLwin/lib64" />
         </CLASSES>
         <JAVADOC />
         <NATIVE>
-          <root url="file://$MODULE_DIR$/../../../Downloads/JOGLwin/JOGLwin/lib64" />
+          <root url="file://C:/Users/Downloads/JOGLwin/JOGLwin/lib64" />
         </NATIVE>
         <SOURCES />
-        <jarDirectory url="file://$MODULE_DIR$/../../../Downloads/JOGLwin/JOGLwin/lib64" recursive="false" />
+        <jarDirectory url="file://C:/Users/Downloads/JOGLwin/JOGLwin/lib64" recursive="false" />
       </library>
     </orderEntry>
-    <orderEntry type="module-library">
-      <library>
-        <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../../Downloads/JOGLwin/JOGLwin/lib64/gluegen-rt.jar!/" />
-          <root url="file://$MODULE_DIR$/../../../Downloads/JOGLwin/JOGLwin/lib64" />
-        </CLASSES>
-        <JAVADOC />
-        <NATIVE>
-          <root url="file://$MODULE_DIR$/../../../Downloads/JOGLwin/JOGLwin/lib64" />
-        </NATIVE>
-        <SOURCES />
-        <jarDirectory url="file://$MODULE_DIR$/../../../Downloads/JOGLwin/JOGLwin/lib64" recursive="false" />
-      </library>
-    </orderEntry>
+    <orderEntry type="library" exported="" name="lib64" level="project" />
   </component>
 </module>

@@ -1,13 +1,13 @@
-ahmed:300
-tito:100
-mohamed:500
-she5 wageeh:-1
-hamada:50
-يبر:-1
-ق4ءئ:-1
-5amees kaka:-1
-wageej:-1
-waggeh:-1
-yossef:-1
-wageeh:-1
-kareem 3adel:-1
+ahmed:400
+5amees kaka:50
+sayed:500
+she5 wageeh:300
+gogo:456
+gemini:230
+banana:849
+messi:478
+shikabala:133
+afsha:789
+tito:415
+zemo:693
+kemo:784

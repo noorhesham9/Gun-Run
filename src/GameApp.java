@@ -102,19 +102,17 @@ public class GameApp {
         JButton scoreBoard = createStyledButton("Scoreboard");
         JButton instructions = createStyledButton("Instructions");
 
-        instructions.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                JOptionPane.showMessageDialog(frame,
-                        "Game Instructions:\n\n" +
-                                "1. Use Arrow Keys to Move.\n" +
-                                "2. Press 'Space' to Shoot.\n" +
-                                "3. Avoid enemies and obstacles.\n" +
-                                "4. Survive as long as possible!\n\n" +
-                                "Good Luck, Soldier!",
-                        "How to Play",
-                        JOptionPane.INFORMATION_MESSAGE);
-            }
+        instructions.addActionListener(e -> {
+            JOptionPane.showMessageDialog(frame,
+                    "Game Instructions:\n" +
+                            "1. Use Arrow Keys to Move.\n" +
+                            "2. Press 'Space' to Shoot.\n" +
+                            "3. Avoid enemies and obstacles.\n" +
+                            "4. Survive as long as possible!\n\n" +
+                            "Good Luck, Soldier!",
+                    "How to Play",
+                    JOptionPane.INFORMATION_MESSAGE);
+            Sound.playSound("Assets/mixkit-drums-of-war-2784.wav");
         });
 
         scoreBoard.addActionListener(e -> showScoreboard());
@@ -139,14 +137,11 @@ public class GameApp {
             showPlayerMode();
         });
 
-        scoreBoard.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                Sound.stop();
-                Sound.playSound("Assets/mixkit-drums-of-war-2784.wav");
-                Sound.playBackground("Assets/metal slug 3 carry out(M4A_128K).wav");
-                showScoreboard();
-            }
+        scoreBoard.addActionListener(e -> {
+            Sound.stop();
+            Sound.playSound("Assets/mixkit-drums-of-war-2784.wav");
+            Sound.playBackground("Assets/metal slug 3 carry out(M4A_128K).wav");
+            showScoreboard();
         });
     }
 
@@ -342,7 +337,7 @@ public class GameApp {
 
         JButton nextBtn = createStyledButton("Next");
         nextBtn.addActionListener(nextStepAction);
-        nextBtn.setForeground(Color.BLACK);
+        nextBtn.setForeground(Color.WHITE);
 
         centerPanel.add(nextBtn);
         centerPanel.add(Box.createVerticalStrut(20));
@@ -547,13 +542,15 @@ public class GameApp {
 
     Map<String, Integer> loadScores() {
         Map<String, Integer> scores = new HashMap<>();
+        int cnt = 0;
         File file = new File("scores.txt");
         if (!file.exists()) return scores;
         try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
             String line;
-            while ((line = reader.readLine()) != null) {
+            while ((line = reader.readLine()) != null && cnt != 10) {
                 String[] parts = line.split(":");
                 if (parts.length == 2) scores.put(parts[0], Integer.parseInt(parts[1]));
+                cnt++;
             }
         } catch (IOException e) {
             System.out.println(e.getMessage());
