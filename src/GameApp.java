@@ -7,10 +7,10 @@ import java.awt.event.ActionListener;
 import java.util.HashMap;
 import java.util.Map;
 
-
 public class GameApp {
     JFrame frame;
-
+    JButton muteButton;
+    private static final Dimension MUTE_BUTTON_SIZE = new Dimension(80, 30);
 
     public static void main(String[] args) {
         new GameApp();
@@ -22,12 +22,33 @@ public class GameApp {
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setLocationRelativeTo(null);
 
-        mainMenu();
+        muteButton = createMuteButton();
 
+        mainMenu();
         frame.setVisible(true);
         Sound.playBackground("Assets/Metal Slug 2 Prehistoric Site(MP3_160K).wav");
     }
 
+    private JButton createMuteButton() {
+        JButton muteBtn = new JButton(Sound.isMuted() ? "UNMute" : "Mute");
+        muteBtn.setFont(new Font("Arial", Font.BOLD, 16));
+        muteBtn.setPreferredSize(MUTE_BUTTON_SIZE);
+        muteBtn.setMaximumSize(MUTE_BUTTON_SIZE);
+        muteBtn.setMinimumSize(MUTE_BUTTON_SIZE);
+        muteBtn.setBackground(new Color(70, 70, 70));
+        muteBtn.setForeground(Color.WHITE);
+        muteBtn.setFocusPainted(false);
+        muteBtn.setBorder(BorderFactory.createLineBorder(Color.YELLOW, 2));
+
+        muteBtn.addActionListener(e -> {
+            Sound.toggleMute();
+            muteBtn.setText(Sound.isMuted() ? "Unmute" : "Mute");
+            muteBtn.setToolTipText(Sound.isMuted() ? "Unmute" : "Mute");
+        });
+
+        muteBtn.setToolTipText(Sound.isMuted() ? "Unmute" : "Mute");
+        return muteBtn;
+    }
     void mainMenu() {
         Image bgImage = null;
         try {
@@ -37,7 +58,7 @@ public class GameApp {
         }
         final Image finalBgImage = bgImage;
 
-        JPanel menuPanel = new JPanel() {
+        JPanel menuPanel = new JPanel(new BorderLayout()) {
             @Override
             protected void paintComponent(Graphics g) {
                 super.paintComponent(g);
@@ -46,7 +67,14 @@ public class GameApp {
                 }
             }
         };
-        menuPanel.setLayout(new BoxLayout(menuPanel, BoxLayout.Y_AXIS));
+
+        JPanel topPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        topPanel.setOpaque(false);
+        topPanel.add(muteButton);
+
+        JPanel centerPanel = new JPanel();
+        centerPanel.setLayout(new BoxLayout(centerPanel, BoxLayout.Y_AXIS));
+        centerPanel.setOpaque(false);
 
         JLabel gameTitle = new JLabel();
         try {
@@ -64,36 +92,36 @@ public class GameApp {
         }
         gameTitle.setAlignmentX(Component.CENTER_ALIGNMENT);
 
-        menuPanel.add(Box.createVerticalStrut(50));
-        menuPanel.add(gameTitle);
-        menuPanel.add(Box.createVerticalStrut(50));
+        centerPanel.add(Box.createVerticalStrut(50));
+        centerPanel.add(gameTitle);
+        centerPanel.add(Box.createVerticalStrut(50));
 
         JButton startButton = createStyledButton("Start");
         JButton scoreBoard = createStyledButton("Scoreboard");
-        JButton Instructions = createStyledButton("Instructions");
-        JButton Mute = createStyledButton(Sound.isMuted() ? "Unmute" : "Mute");
-        Mute.addActionListener(e -> {
-            Sound.toggleMute();
-            Mute.setText(Sound.isMuted() ? "Unmute" : "Mute");
-        });
+        JButton instructions = createStyledButton("Instructions");
+
         scoreBoard.addActionListener(e -> showScoreboard());
 
-        menuPanel.add(Box.createVerticalGlue());
-        menuPanel.add(startButton);
-        menuPanel.add(Box.createVerticalStrut(20));
-        menuPanel.add(scoreBoard);
-        menuPanel.add(Box.createVerticalStrut(20));
-        menuPanel.add(Instructions);
-        menuPanel.add(Box.createVerticalStrut(20));
-        menuPanel.add(Mute);
-        menuPanel.add(Box.createVerticalGlue());
+        centerPanel.add(Box.createVerticalGlue());
+        centerPanel.add(startButton);
+        centerPanel.add(Box.createVerticalStrut(20));
+        centerPanel.add(scoreBoard);
+        centerPanel.add(Box.createVerticalStrut(20));
+        centerPanel.add(instructions);
+        centerPanel.add(Box.createVerticalGlue());
+
+        menuPanel.add(topPanel, BorderLayout.NORTH);
+        menuPanel.add(centerPanel, BorderLayout.CENTER);
+
         frame.setContentPane(menuPanel);
         frame.revalidate();
+
         startButton.addActionListener(e -> {
             Sound.playSound("Assets/mixkit-drums-of-war-2784.wav");
             frame.dispose();
             showPlayerMode();
         });
+
         scoreBoard.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -119,7 +147,7 @@ public class GameApp {
 
         final Image finalBgImage = bgImage;
 
-        JPanel menuPanel = new JPanel() {
+        JPanel menuPanel = new JPanel(new BorderLayout()) {
             @Override
             protected void paintComponent(Graphics g) {
                 super.paintComponent(g);
@@ -129,7 +157,13 @@ public class GameApp {
             }
         };
 
-        menuPanel.setLayout(new BoxLayout(menuPanel, BoxLayout.Y_AXIS));
+        JPanel topPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        topPanel.setOpaque(false);
+        topPanel.add(muteButton);
+
+        JPanel centerPanel = new JPanel();
+        centerPanel.setLayout(new BoxLayout(centerPanel, BoxLayout.Y_AXIS));
+        centerPanel.setOpaque(false);
 
         JLabel gameTitle = new JLabel();
         try {
@@ -147,13 +181,13 @@ public class GameApp {
         }
         gameTitle.setAlignmentX(Component.CENTER_ALIGNMENT);
 
-        menuPanel.add(Box.createVerticalStrut(50));
-        menuPanel.add(gameTitle);
-        menuPanel.add(Box.createVerticalStrut(50));
+        centerPanel.add(Box.createVerticalStrut(50));
+        centerPanel.add(gameTitle);
+        centerPanel.add(Box.createVerticalStrut(50));
 
         JButton singlePlayer = createStyledButton("Single Player");
         JButton multiplePlayers = createStyledButton("Multi Players");
-        JButton Back = createStyledButton("Back");
+        JButton back = createStyledButton("Back");
 
         singlePlayer.addActionListener(e -> {
             Sound.playSound("Assets/mixkit-drums-of-war-2784.wav");
@@ -167,19 +201,22 @@ public class GameApp {
             showNameInput(2);
         });
 
-        Back.addActionListener(e -> {
+        back.addActionListener(e -> {
             Sound.playSound("Assets/mixkit-shotgun-long-pump-1666.wav");
             frame.dispose();
             new GameApp();
         });
 
-        menuPanel.add(Box.createVerticalGlue());
-        menuPanel.add(singlePlayer);
-        menuPanel.add(Box.createVerticalStrut(20));
-        menuPanel.add(multiplePlayers);
-        menuPanel.add(Box.createVerticalStrut(20));
-        menuPanel.add(Back);
-        menuPanel.add(Box.createVerticalGlue());
+        centerPanel.add(Box.createVerticalGlue());
+        centerPanel.add(singlePlayer);
+        centerPanel.add(Box.createVerticalStrut(20));
+        centerPanel.add(multiplePlayers);
+        centerPanel.add(Box.createVerticalStrut(20));
+        centerPanel.add(back);
+        centerPanel.add(Box.createVerticalGlue());
+
+        menuPanel.add(topPanel, BorderLayout.NORTH);
+        menuPanel.add(centerPanel, BorderLayout.CENTER);
 
         frame.add(menuPanel);
         frame.setVisible(true);
@@ -199,7 +236,7 @@ public class GameApp {
         }
         final Image finalBgImage = bgImage;
 
-        JPanel inputPanel = new JPanel() {
+        JPanel inputPanel = new JPanel(new BorderLayout()) {
             @Override
             protected void paintComponent(Graphics g) {
                 super.paintComponent(g);
@@ -208,8 +245,15 @@ public class GameApp {
                 }
             }
         };
-        inputPanel.setLayout(new BoxLayout(inputPanel, BoxLayout.Y_AXIS));
-        inputPanel.setOpaque(true);
+
+        JPanel topPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        topPanel.setOpaque(false);
+        topPanel.add(muteButton);
+
+        JPanel centerPanel = new JPanel();
+        centerPanel.setLayout(new BoxLayout(centerPanel, BoxLayout.Y_AXIS));
+        centerPanel.setOpaque(true);
+        centerPanel.setOpaque(false);
 
         JLabel gameTitle = new JLabel();
         try {
@@ -227,13 +271,13 @@ public class GameApp {
         }
         gameTitle.setAlignmentX(Component.CENTER_ALIGNMENT);
 
-        inputPanel.add(Box.createVerticalStrut(30));
-        inputPanel.add(gameTitle);
-        inputPanel.add(Box.createVerticalStrut(30));
+        centerPanel.add(Box.createVerticalStrut(30));
+        centerPanel.add(gameTitle);
+        centerPanel.add(Box.createVerticalStrut(30));
 
         ActionListener startGameAction = e -> {
-            JTextField nameField1 = (JTextField) inputPanel.getClientProperty("nameField1");
-            JTextField nameField2 = (JTextField) inputPanel.getClientProperty("nameField2");
+            JTextField nameField1 = (JTextField) centerPanel.getClientProperty("nameField1");
+            JTextField nameField2 = (JTextField) centerPanel.getClientProperty("nameField2");
 
             String p1 = nameField1.getText().trim();
             String p2 = (nameField2 != null) ? nameField2.getText().trim() : "";
@@ -250,7 +294,6 @@ public class GameApp {
             }
         };
 
-
         JLabel label1 = new JLabel(players == 1 ? "Username:" : "Player 1 Username:");
         label1.setForeground(Color.WHITE);
         label1.setFont(new Font("Arial", Font.BOLD, 16));
@@ -260,11 +303,11 @@ public class GameApp {
         nameField1.setAlignmentX(Component.CENTER_ALIGNMENT);
         nameField1.addActionListener(startGameAction);
 
-        inputPanel.putClientProperty("nameField1", nameField1);
+        centerPanel.putClientProperty("nameField1", nameField1);
 
-        inputPanel.add(label1);
-        inputPanel.add(nameField1);
-        inputPanel.add(Box.createVerticalStrut(20));
+        centerPanel.add(label1);
+        centerPanel.add(nameField1);
+        centerPanel.add(Box.createVerticalStrut(20));
 
         JTextField nameField2;
         if (players == 2) {
@@ -277,19 +320,19 @@ public class GameApp {
             nameField2.setAlignmentX(Component.CENTER_ALIGNMENT);
             nameField2.addActionListener(startGameAction);
 
-            inputPanel.putClientProperty("nameField2", nameField2);
+            centerPanel.putClientProperty("nameField2", nameField2);
 
-            inputPanel.add(label2);
-            inputPanel.add(nameField2);
-            inputPanel.add(Box.createVerticalStrut(30));
+            centerPanel.add(label2);
+            centerPanel.add(nameField2);
+            centerPanel.add(Box.createVerticalStrut(30));
         }
 
         JButton startBtn = createStyledButton("Enter");
         startBtn.addActionListener(startGameAction);
         startBtn.setForeground(Color.BLACK);
 
-        inputPanel.add(startBtn);
-        inputPanel.add(Box.createVerticalStrut(20));
+        centerPanel.add(startBtn);
+        centerPanel.add(Box.createVerticalStrut(20));
 
         JButton backBtn = createStyledButton("Back");
         backBtn.addActionListener(e -> {
@@ -297,28 +340,37 @@ public class GameApp {
             nameFrame.dispose();
             showPlayerMode();
         });
-        inputPanel.add(backBtn);
-        inputPanel.add(Box.createVerticalGlue());
+        centerPanel.add(backBtn);
+        centerPanel.add(Box.createVerticalGlue());
 
+        inputPanel.add(topPanel, BorderLayout.NORTH);
+        inputPanel.add(centerPanel, BorderLayout.CENTER);
 
         nameFrame.add(inputPanel);
         nameFrame.setVisible(true);
         nameField1.requestFocusInWindow();
     }
 
-
     void showScoreboard() {
-        JPanel scorePanel = new JPanel();
-        scorePanel.setLayout(new BoxLayout(scorePanel, BoxLayout.Y_AXIS));
+        JPanel scorePanel = new JPanel(new BorderLayout());
         scorePanel.setBackground(Color.BLACK);
+
+        JPanel topPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        topPanel.setOpaque(false);
+        topPanel.add(muteButton);
+
+        JPanel centerPanel = new JPanel();
+        centerPanel.setLayout(new BoxLayout(centerPanel, BoxLayout.Y_AXIS));
+        centerPanel.setBackground(Color.BLACK);
 
         JLabel title = new JLabel("High Scores");
         title.setFont(new Font("Arial", Font.BOLD, 30));
         title.setForeground(Color.WHITE);
         title.setAlignmentX(Component.CENTER_ALIGNMENT);
-        scorePanel.add(Box.createVerticalStrut(20));
-        scorePanel.add(title);
-        scorePanel.add(Box.createVerticalStrut(20));
+        centerPanel.add(Box.createVerticalStrut(20));
+        centerPanel.add(title);
+        centerPanel.add(Box.createVerticalStrut(20));
+
         Map<String, Integer> scores = loadScores();
         scores.entrySet().stream()
                 .sorted(Map.Entry.<String, Integer>comparingByValue().reversed())
@@ -329,25 +381,27 @@ public class GameApp {
                     scoreLabel.setForeground(Color.WHITE);
                     scoreLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
 
-                    scorePanel.add(scoreLabel);
-                    scorePanel.add(Box.createVerticalStrut(10));
+                    centerPanel.add(scoreLabel);
+                    centerPanel.add(Box.createVerticalStrut(10));
                 });
-
 
         JButton btnBack = createStyledButton("Back");
-        btnBack
-                .addActionListener(new ActionListener() {
-                    @Override
-                    public void actionPerformed(ActionEvent e) {
-                        Sound.playSound("Assets/mixkit-shotgun-long-pump-1666.wav");
-                        Sound.stop();
-                        frame.dispose();
-                        new GameApp();
-                    }
-                });
-        scorePanel.add(Box.createVerticalGlue());
-        scorePanel.add(btnBack);
-        scorePanel.add(Box.createVerticalStrut(20));
+        btnBack.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                Sound.playSound("Assets/mixkit-shotgun-long-pump-1666.wav");
+                Sound.stop();
+                frame.dispose();
+                new GameApp();
+            }
+        });
+
+        centerPanel.add(Box.createVerticalGlue());
+        centerPanel.add(btnBack);
+        centerPanel.add(Box.createVerticalStrut(20));
+
+        scorePanel.add(topPanel, BorderLayout.NORTH);
+        scorePanel.add(centerPanel, BorderLayout.CENTER);
 
         frame.setContentPane(scorePanel);
         frame.revalidate();
@@ -358,12 +412,14 @@ public class GameApp {
         btn.setAlignmentX(Component.CENTER_ALIGNMENT);
         btn.setFont(new Font("Arial", Font.BOLD, 24));
         btn.setMaximumSize(new Dimension(200, 50));
+        btn.setBackground(new Color(20, 130, 140));
+        btn.setForeground(Color.WHITE);
+        btn.setFocusPainted(false);
         return btn;
     }
 
     void saveScore(String playerName, int newScore) {
         Map<String, Integer> scores = loadScores();
-
 
         if (scores.containsKey(playerName)) {
             int currentScore = scores.get(playerName);
