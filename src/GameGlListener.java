@@ -438,7 +438,6 @@ public class GameGlListener implements GLEventListener, KeyListener, MouseListen
     private void drawGame(GL gl) {
         if (!isPaused && !isGameOver) {
 
-            // X-Axis Movement
             if (leftPressed) {
                 playerX -= 0.8f;
                 facingRight = false;
@@ -448,10 +447,20 @@ public class GameGlListener implements GLEventListener, KeyListener, MouseListen
                 facingRight = true;
             }
 
-            // Y-Axis Physics (Gravity)
+            final float PLAYER_WIDTH = 10f;
+            final float MAX_X = 100f - PLAYER_WIDTH;
+
+            if (playerX < 0) {
+                playerX = 0;
+            }
+
+            if (playerX > MAX_X) {
+                playerX = MAX_X;
+            }
+
             if (isJumping) {
                 playerY += verticalVelocity;
-                verticalVelocity -= gravity; // Apply gravity
+                verticalVelocity -= gravity;
 
                 if (playerY <= groundLevel) {
                     playerY = groundLevel;
@@ -464,7 +473,6 @@ public class GameGlListener implements GLEventListener, KeyListener, MouseListen
             updateBullets(gl);
         }
     }
-
     private void animateSprite(GL gl) {
         ArrayList<Texture> currentAnim;
 
