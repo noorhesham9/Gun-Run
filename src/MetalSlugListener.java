@@ -54,10 +54,9 @@ public class MetalSlugListener implements GLEventListener, KeyListener, MouseLis
         myFrame = new JFrame("Metal Slug - Game Mode (" + difficulty + ")");
         myFrame.setLayout(new BorderLayout());
         myFrame.add(glCanvas, BorderLayout.CENTER);
-
-        myFrame.setExtendedState(JFrame.MAXIMIZED_BOTH);
+        myFrame.setSize(800, 600);
+        myFrame.setLocationRelativeTo(null);
         myFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        myFrame.setUndecorated(true);
         myFrame.setVisible(true);
 
         animator = new FPSAnimator(glCanvas, 60);
