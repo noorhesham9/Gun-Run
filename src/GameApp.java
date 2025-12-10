@@ -416,19 +416,19 @@ public class GameApp {
         easyBtn.addActionListener(e -> {
             Sound.playSound("Assets/mixkit-drums-of-war-2784.wav");
             diffFrame.dispose();
-            new MetalSlugListener("Easy");
+            new GameGlListener("Easy");
         });
 
         mediumBtn.addActionListener(e -> {
             Sound.playSound("Assets/mixkit-drums-of-war-2784.wav");
             diffFrame.dispose();
-            new MetalSlugListener("Medium");
+            new GameGlListener("Medium");
         });
 
         hardBtn.addActionListener(e -> {
             Sound.playSound("Assets/mixkit-drums-of-war-2784.wav");
             diffFrame.dispose();
-            new MetalSlugListener("Hard");
+            new GameGlListener("Hard");
         });
 
         backBtn.addActionListener(e -> {
@@ -489,14 +489,11 @@ public class GameApp {
                 });
 
         JButton btnBack = createStyledButton("Back");
-        btnBack.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                Sound.playSound("Assets/mixkit-shotgun-long-pump-1666.wav");
-                Sound.stop();
-                frame.dispose();
-                new GameApp();
-            }
+        btnBack.addActionListener(e -> {
+            Sound.playSound("Assets/mixkit-shotgun-long-pump-1666.wav");
+            Sound.stop();
+            frame.dispose();
+            new GameApp();
         });
 
         centerPanel.add(Box.createVerticalGlue());
