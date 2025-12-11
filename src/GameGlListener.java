@@ -629,6 +629,8 @@ public class GameGlListener implements GLEventListener, KeyListener, MouseListen
         int height = drawable.getHeight();
 
         gl.glColor3f(1.0f, 1.0f, 1.0f);
+        gl.glEnable(GL.GL_BLEND);
+        gl.glBlendFunc(GL.GL_SRC_ALPHA, GL.GL_ONE_MINUS_SRC_ALPHA);
 
         if (scoreBoardTexture != null) {
             scoreBoardTexture.enable();
@@ -681,7 +683,7 @@ public class GameGlListener implements GLEventListener, KeyListener, MouseListen
             gl.glEnd();
             pauseButtonTexture.disable();
         }
-
+        gl.glDisable(GL.GL_BLEND);
         if (isGameOver) {
             if (GameApp.playerss == 1) {
                 GameApp.saveScore(GameApp.PlayerName1, score);
@@ -700,19 +702,21 @@ public class GameGlListener implements GLEventListener, KeyListener, MouseListen
         if (healthImages != null) {
 
             int index;
-            if (playerHealth >= 80) index = 5;
-            else if (playerHealth >= 60) index = 4;
-            else if (playerHealth >= 40) index = 3;
-            else if (playerHealth >= 20) index = 2;
-            else if (playerHealth > 0) index = 1;
-            else index = 0;
+            // 💡 تصحيح المؤشرات (نفترض أن لديك 5 صور مرقمة من 0 إلى 4)
+            if (playerHealth >= 80) index = 4; // 80%-100% (الصورة الممتلئة)
+            else if (playerHealth >= 60) index = 3; // 60%-79%
+            else if (playerHealth >= 40) index = 2; // 40%-59%
+            else if (playerHealth >= 20) index = 1; // 20%-39%
+            else index = 0; // 0%-19% (الصورة الفارغة/الأقل)
 
             if (healthImages[index] != null) {
                 float x = 2;
                 float y = 82;
                 float w = 30;
                 float h = 8;
-
+                gl.glColor3f(1.0f, 1.0f, 1.0f);
+                gl.glEnable(GL.GL_BLEND);
+                gl.glBlendFunc(GL.GL_SRC_ALPHA, GL.GL_ONE_MINUS_SRC_ALPHA);
                 healthImages[index].enable();
                 healthImages[index].bind();
 
@@ -728,6 +732,7 @@ public class GameGlListener implements GLEventListener, KeyListener, MouseListen
                 gl.glEnd();
 
                 healthImages[index].disable();
+                gl.glDisable(GL.GL_BLEND); // تعطيل الـ Blending بعد الانتهاءs
             }
         }
     }
@@ -758,6 +763,8 @@ public class GameGlListener implements GLEventListener, KeyListener, MouseListen
     }
 
     private void drawPauseMenu(GL gl, GLAutoDrawable drawable) {
+        gl.glEnable(GL.GL_BLEND);
+        gl.glBlendFunc(GL.GL_SRC_ALPHA, GL.GL_ONE_MINUS_SRC_ALPHA);
         gl.glColor4f(0.0f, 0.0f, 0.0f, 0.7f);
         gl.glBegin(GL.GL_QUADS);
         gl.glVertex2f(0, 0);
@@ -815,6 +822,7 @@ public class GameGlListener implements GLEventListener, KeyListener, MouseListen
             gl.glEnd();
             exitTexture.disable();
         }
+        gl.glDisable(GL.GL_BLEND); // تعطيل الـ Blending
     }
 
     private void drawGame(GL gl) {
