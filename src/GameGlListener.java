@@ -221,7 +221,7 @@ public class GameGlListener implements GLEventListener, KeyListener, MouseListen
     long lastSpawnTime = 0;
     long spawnInterval = 2000;
     Random random = new Random();
-
+    private long helicopterCooldown;
 
     Rectangle continueBtnBounds = new Rectangle(35, 50, 30, 10);
     Rectangle exitBtnBounds = new Rectangle(35, 35, 30, 10);
@@ -235,13 +235,16 @@ public class GameGlListener implements GLEventListener, KeyListener, MouseListen
         this.difficultyLevel = difficulty;
         if (difficulty.equals("Easy")) {
             timerSeconds = 30;
-            spawnInterval = 5000;
+            spawnInterval = 3000;
+            this.helicopterCooldown = 0;
         } else if (difficulty.equals("Medium")) {
             timerSeconds = 45;
-            spawnInterval = 3000;
+            spawnInterval = 1800;
+            this.helicopterCooldown = 7000;
         } else if (difficulty.equals("Hard")) {
-            timerSeconds = 60;
-            spawnInterval = 2000;
+            timerSeconds = 80;
+            spawnInterval = 800;
+            this.helicopterCooldown = 3500;
         }
         GLCapabilities capabilities = new GLCapabilities();
         glCanvas = new GLCanvas(capabilities);
@@ -1020,9 +1023,20 @@ public class GameGlListener implements GLEventListener, KeyListener, MouseListen
 
 
     private void spawnHelecopter() {
-        if (System.currentTimeMillis() - lastHeliSpawnTime >= 20000 && !helicopter.active) {
-            helicopter.activate(playerX); // استهداف موقع اللاعب الحالي
-            lastHeliSpawnTime = System.currentTimeMillis();
+        long currentTime = System.currentTimeMillis();
+
+        if (helicopter.active) {
+            return;
+        }
+
+        if (difficultyLevel.equals("Easy")) {
+            return;
+        }
+
+
+        if (currentTime - lastHeliSpawnTime >= helicopterCooldown) {
+            helicopter.activate(playerX);
+            lastHeliSpawnTime = currentTime;
         }
     }
 
