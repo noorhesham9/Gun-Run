@@ -252,6 +252,8 @@ public class GameApp {
 
         JButton singlePlayer = createStyledImageButton("Assets/button/single player (1).png", Large_BUTTON_SIZE);
         JButton multiplePlayers = createStyledImageButton("Assets/button/Multi player (1).png", Large_BUTTON_SIZE);
+        JButton ZompieMOde = createStyledImageButton("Assets/button/single player (1).png", Large_BUTTON_SIZE);
+
         JButton back = createStyledImageButton("Assets/button/Back (1).png", BUTTON_SIZE);
 
         singlePlayer.addActionListener(e -> {
@@ -264,6 +266,12 @@ public class GameApp {
             Sound.playSound("Assets/mixkit-drums-of-war-2784.wav");
             frame.dispose();
             showNameInput(2);
+        });
+
+        ZompieMOde.addActionListener(e -> {
+            Sound.playSound("Assets/mixkit-drums-of-war-2784.wav");
+            frame.dispose();
+//            new ZombieModeListener(diff);
         });
 
         back.addActionListener(e -> {
@@ -469,6 +477,7 @@ public class GameApp {
         JButton easyBtn = createStyledImageButton("Assets/button/esay (1).png", BUTTON_SIZE);
         JButton mediumBtn = createStyledImageButton("Assets/button/Medium (1).png", BUTTON_SIZE);
         JButton hardBtn = createStyledImageButton("Assets/button/Hard (1).png", BUTTON_SIZE);
+        JButton zombieModeBtn = createStyledImageButton("Assets/button/zombie-mode.png", Large_BUTTON_SIZE);
         JButton backBtn = createStyledImageButton("Assets/button/Back (1).png", BUTTON_SIZE);
 
         boolean isMulti = (players == 2);
@@ -477,6 +486,13 @@ public class GameApp {
             Sound.playSound("Assets/mixkit-drums-of-war-2784.wav");
             diffFrame.dispose();
             new GameGlListener("Easy", isMulti, PlayerName1, PlayerName2);
+        });
+        zombieModeBtn.addActionListener(e -> {
+            Sound.playSound("Assets/mixkit-drums-of-war-2784.wav");
+            diffFrame.dispose();
+
+            new ZombieModeListener("Medium");
+
         });
 
         mediumBtn.addActionListener(e -> {
@@ -499,11 +515,14 @@ public class GameApp {
 
         centerPanel.add(Box.createVerticalGlue());
         centerPanel.add(easyBtn);
-        centerPanel.add(Box.createVerticalStrut(20));
+//        centerPanel.add(Box.createVerticalStrut(20));
         centerPanel.add(mediumBtn);
-        centerPanel.add(Box.createVerticalStrut(20));
+//        centerPanel.add(Box.createVerticalStrut(20));
         centerPanel.add(hardBtn);
-        centerPanel.add(Box.createVerticalStrut(20));
+//        centerPanel.add(Box.createVerticalStrut(20));
+        // 🆕 إضافة زر وضع الزومبي
+        centerPanel.add(zombieModeBtn);
+//        centerPanel.add(Box.createVerticalStrut(25)); // فراغ بعد زر وضع الزومبي
         centerPanel.add(backBtn);
         centerPanel.add(Box.createVerticalGlue());
 

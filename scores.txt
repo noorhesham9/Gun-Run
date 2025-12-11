@@ -1,12 +1,11 @@
 boota:698
 mano:450
 roota:400
+asdfas:160
 beeka:90
 sheeka:75
 weeka:65
 seeka:60
 tito:50
-5amees kaka:40
-ahmed:30
 meekee:40
-heekee:40
+dfgdf:60

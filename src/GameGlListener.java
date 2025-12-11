@@ -520,25 +520,26 @@ public class GameGlListener implements GLEventListener, KeyListener, MouseListen
     private void updateHelicopter(GL gl) {
         if (helicopter.active) {
 
-            Sound.stop();
-
             if (helicopter.isDropping) {
+
                 if (helicopter.y > helicopter.DROP_Y) {
-                    Sound.playSound("Assets/Sounds/mixkit-arcade-game-explosion-2759.wav");
+                    System.out.println("downnn");
+                    Sound.playLoopSound("Assets/Sounds/helicopter-sound.wav");
                     helicopter.y -= helicopter.speed;
                 } else {
                     if (helicopter.y <= helicopter.DROP_Y && helicopter.y > helicopter.DROP_Y - 1.0f) {
                         helicopterBombs.add(new Bomb(helicopter.x + (helicopter.HELI_HEIGHT / 2), helicopter.y));
                         helicopter.y -= 2.0f;
-
                     }
                     helicopter.isDropping = false;
                 }
 
-
             } else {
+                // مرحلة الصعود
                 helicopter.y += helicopter.speed * 2.0;
                 if (helicopter.y > 115) {
+
+                    Sound.stopHelicopterSound();
                     helicopter.active = false;
                 }
             }
