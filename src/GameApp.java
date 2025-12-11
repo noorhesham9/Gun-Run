@@ -580,13 +580,11 @@ public class GameApp {
                 if (line.isEmpty()) continue;
 
                 String[] parts = line.split(":");
-                // التأكد من أن التنسيق صحيح (الاسم:النتيجة)
                 if (parts.length == 2) {
                     try {
                         String name = parts[0].trim();
                         int score = Integer.parseInt(parts[1].trim());
 
-                        // إذا كان الاسم موجودًا بالفعل، يتم الاحتفاظ بالنتيجة الأعلى
                         allScores.merge(name, score, Integer::max);
                     } catch (NumberFormatException e) {
                         System.err.println("Skipping invalid score line: " + line);

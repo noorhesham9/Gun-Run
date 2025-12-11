@@ -161,6 +161,15 @@ public class GameGlListener implements GLEventListener, KeyListener, MouseListen
     Texture gamePausedTexture;
     Texture continueTexture;
     Texture exitTexture;
+    // علشان اغير الصوره اللي بتتجر ل صور بتمشي للاعداء
+    ArrayList<Texture> enemy_zombi_walk = new ArrayList<>();
+    Texture enemy_zombi_death;
+    Texture enemy_zombi_attack;
+
+    ArrayList<Texture> enemy1_Scintest_walk = new ArrayList<>();
+    Texture enemy1_Scintest_death;
+    Texture enemy1_Scintest_attack;
+
     private final long ENEMY_SHOOT_INTERVAL = 1500; // العدو يطلق النار كل 1.5 ثانية
     private Texture winTexture;
     private Texture loseTexture;
@@ -225,13 +234,13 @@ public class GameGlListener implements GLEventListener, KeyListener, MouseListen
     public GameGlListener(String difficulty, boolean isMulti) {
         this.difficultyLevel = difficulty;
         if (difficulty.equals("Easy")) {
-            timerSeconds = 60;
+            timerSeconds = 30;
             spawnInterval = 5000;
         } else if (difficulty.equals("Medium")) {
             timerSeconds = 45;
             spawnInterval = 3000;
         } else if (difficulty.equals("Hard")) {
-            timerSeconds = 30;
+            timerSeconds = 60;
             spawnInterval = 2000;
         }
         GLCapabilities capabilities = new GLCapabilities();
