@@ -3,11 +3,17 @@ import java.awt.*;
 import java.awt.event.ActionListener;
 import java.io.*;
 import javax.imageio.ImageIO;
+import java.util.Comparator;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 public class GameApp {
     JFrame frame;
+    public static int playerss;
+    public static String PlayerName1;
+    public static String PlayerName2;
     JButton muteButton;
     private static final Dimension MUTE_BUTTON_SIZE = new Dimension(50, 50);
     private static final String MUTE_ON_PATH = "Assets/MuteOn (1).png";
@@ -248,6 +254,7 @@ public class GameApp {
     }
 
     void showNameInput(int players) {
+        playerss = players;
         JFrame nameFrame = new JFrame("Gun Run - Enter Names");
         nameFrame.setSize(800, 600);
         nameFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -304,11 +311,14 @@ public class GameApp {
             String p2 = (nameField2 != null) ? nameField2.getText().trim() : "";
 
             if (players == 1 && !p1.isEmpty()) {
+                PlayerName1 = p1;
                 saveScore(p1, -1);
                 nameFrame.dispose();
                 showDifficultySelection(1);
 
             } else if (players == 2 && !p1.isEmpty() && !p2.isEmpty()) {
+                PlayerName1 = p1;
+                PlayerName2 = p2;
                 saveScore(p1, -1);
                 saveScore(p2, -1);
                 nameFrame.dispose();
@@ -536,7 +546,7 @@ public class GameApp {
         return btn;
     }
 
-    void saveScore(String playerName, int newScore) {
+    public static void saveScore(String playerName, int newScore) {
         Map<String, Integer> scores = loadScores();
 
         if (scores.containsKey(playerName)) {
@@ -555,21 +565,52 @@ public class GameApp {
         }
     }
 
-    Map<String, Integer> loadScores() {
-        Map<String, Integer> scores = new HashMap<>();
-        int cnt = 0;
+
+    public static Map<String, Integer> loadScores() {
+        // 1. قراءة جميع النتائج في Map مؤقتة
+        Map<String, Integer> allScores = new HashMap<>();
         File file = new File("scores.txt");
-        if (!file.exists()) return scores;
+        if (!file.exists()) return allScores; // إرجاع خريطة فارغة إذا لم يكن الملف موجودًا
+
         try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
             String line;
-            while ((line = reader.readLine()) != null && cnt != 10) {
+            while ((line = reader.readLine()) != null) {
+                // إزالة أي مسافات زائدة
+                line = line.trim();
+                if (line.isEmpty()) continue;
+
                 String[] parts = line.split(":");
-                if (parts.length == 2) scores.put(parts[0], Integer.parseInt(parts[1]));
-                cnt++;
+                // التأكد من أن التنسيق صحيح (الاسم:النتيجة)
+                if (parts.length == 2) {
+                    try {
+                        String name = parts[0].trim();
+                        int score = Integer.parseInt(parts[1].trim());
+
+                        // إذا كان الاسم موجودًا بالفعل، يتم الاحتفاظ بالنتيجة الأعلى
+                        allScores.merge(name, score, Integer::max);
+                    } catch (NumberFormatException e) {
+                        System.err.println("Skipping invalid score line: " + line);
+                    }
+                }
             }
         } catch (IOException e) {
-            System.out.println(e.getMessage());
+            System.err.println("Error reading scores file: " + e.getMessage());
         }
-        return scores;
+
+        // 2. و 3. فرز وتحديد أفضل 10 نتائج (Top 10)
+
+        // استخدام Stream API للفرز:
+        return allScores.entrySet().stream()
+                // الفرز تنازليًا حسب القيمة (النتيجة)
+                .sorted(Map.Entry.comparingByValue(Comparator.reverseOrder()))
+                // تحديد أفضل 10 عناصر فقط
+                .limit(10)
+                // تجميع أفضل 10 نتائج مرة أخرى في LinkedHashMap
+                // (للحفاظ على ترتيب الفرز)
+                .collect(Collectors.toMap(
+                        Map.Entry::getKey,
+                        Map.Entry::getValue,
+                        (e1, e2) -> e1, // دمج منطقي (غير مستخدم هنا)
+                        LinkedHashMap::new)); // استخدام LinkedHashMap للحفاظ على الترتيب
     }
 }

@@ -465,7 +465,7 @@ public class GameGlListener implements GLEventListener, KeyListener, MouseListen
         ScoreRenderer.beginRendering(width, height);
         menuRenderer.beginRendering(width, height);
 
-        menuRenderer.setColor(Color.WHITE);
+        menuRenderer.setColor(Color.RED);
         menuRenderer.draw("Score: " + score, (width / 2) - 80, (height / 2) - 50);
         menuRenderer.setColor(Color.YELLOW);
 
@@ -674,6 +674,13 @@ public class GameGlListener implements GLEventListener, KeyListener, MouseListen
         }
 
         if (isGameOver) {
+            if (GameApp.playerss == 1) {
+                GameApp.saveScore(GameApp.PlayerName1, score);
+            }
+            if (GameApp.playerss == 2) {
+                GameApp.saveScore(GameApp.PlayerName1, score);
+                GameApp.saveScore(GameApp.PlayerName2, score);
+            }
             textRenderer.beginRendering(width, height);
             textRenderer.setColor(Color.RED);
             textRenderer.endRendering();
