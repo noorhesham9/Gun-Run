@@ -1,4 +1,5 @@
 import javax.media.opengl.*;
+
 import com.sun.opengl.util.FPSAnimator;
 import com.sun.opengl.util.j2d.TextRenderer;
 import com.sun.opengl.util.texture.Texture;
@@ -65,6 +66,7 @@ public class GameGlListener implements GLEventListener, KeyListener, MouseListen
         final float DROP_Y = 80.0f;
         final float HELI_HEIGHT = 15.0f;
         final float TOP_BUFFER = 10.0f;
+
         public void activate(float playerX) {
             this.active = true;
             this.x = playerX;
@@ -88,6 +90,7 @@ public class GameGlListener implements GLEventListener, KeyListener, MouseListen
             this.active = true;
         }
     }
+
     class Bomb {
         float x, y;
         boolean active;
@@ -100,6 +103,7 @@ public class GameGlListener implements GLEventListener, KeyListener, MouseListen
             this.active = true;
         }
     }
+
     class Explosion {
         float x, y;
         boolean active;
@@ -116,7 +120,7 @@ public class GameGlListener implements GLEventListener, KeyListener, MouseListen
     }
 
     float backgroundScrollX = 0.0f;
-    final float PARALLAX_SPEED = 0.1f;
+    final float PARALLAX_SPEED = 0.05f;
     Helicopter helicopter = new Helicopter();
     long lastHeliSpawnTime = 0;
     ArrayList<Bomb> helicopterBombs = new ArrayList<>();
@@ -131,10 +135,12 @@ public class GameGlListener implements GLEventListener, KeyListener, MouseListen
     boolean isMultiplayer = false;
     int timerSeconds = 0;
     int score = 0;
+    int player2Score = 0;
     long lastTime;
     boolean isGameOver = false;
     boolean isGameRunning = true;
     boolean isWin = false;
+    boolean updatedScores = false;
     String difficultyLevel;
 
     TextRenderer timerRenderer;
@@ -159,6 +165,9 @@ public class GameGlListener implements GLEventListener, KeyListener, MouseListen
     Texture bulletTexture;
     Texture muteOnTexture;
     Texture muteOffTexture;
+
+    Texture p1Icon;
+    Texture p2Icon;
 
     ArrayList<Texture> enemy_zombi_walk = new ArrayList<>();
     Texture enemy_zombi_death;
@@ -199,7 +208,6 @@ public class GameGlListener implements GLEventListener, KeyListener, MouseListen
     int currentFrameIndex = 0;
     long shootingStartTime = 0;
 
-    ArrayList<Texture> player2Textures = new ArrayList<>();
     float player2X = 30;
     float player2Y = 15;
     int player2Health = 100;
@@ -209,6 +217,8 @@ public class GameGlListener implements GLEventListener, KeyListener, MouseListen
     boolean p2FacingRight = false;
     boolean p2IsWalking = false;
     boolean p2IsShooting = false;
+    boolean p2IsJumping = false;
+    float p2VerticalVelocity = 0;
     long p2LastFrameTime = 0;
     int p2FrameIndex = 0;
     long p2ShootingStartTime = 0;
@@ -230,10 +240,14 @@ public class GameGlListener implements GLEventListener, KeyListener, MouseListen
     Rectangle scoreBoardBounds = new Rectangle(2, 88, 20, 8);
     Rectangle timerBoardBounds = new Rectangle(40, 88, 20, 8);
     Rectangle muteBtnBounds = new Rectangle(5, 80, 10, 10);
+    String player1Name = "";
+    String player2Name = "";
 
-    public GameGlListener(String difficulty, boolean isMultiplayer) {
+    public GameGlListener(String difficulty, boolean isMultiplayer, String player1Name, String player2Name) {
         this.difficultyLevel = difficulty;
         this.isMultiplayer = isMultiplayer;
+        this.player1Name = player1Name;
+        this.player2Name = player2Name;
 
         if (difficulty.equals("Easy")) {
             timerSeconds = 30;
@@ -280,7 +294,10 @@ public class GameGlListener implements GLEventListener, KeyListener, MouseListen
         gl.glBlendFunc(GL.GL_SRC_ALPHA, GL.GL_ONE_MINUS_SRC_ALPHA);
 
         try {
-            backgroundTexture = TextureIO.newTexture(new File("Assets/Background.png"), true);
+            backgroundTexture = TextureIO.newTexture(new File("Assets/Map1.png"), true);
+            backgroundTexture.setTexParameteri(GL.GL_TEXTURE_WRAP_S, GL.GL_REPEAT);
+            backgroundTexture.setTexParameteri(GL.GL_TEXTURE_WRAP_T, GL.GL_REPEAT);
+
             pauseButtonTexture = TextureIO.newTexture(new File("Assets/Pauseboard (1).png"), true);
             scoreBoardTexture = TextureIO.newTexture(new File("Assets/scoreboard (1).png"), true);
             timerBoardTexture = TextureIO.newTexture(new File("Assets/timerboard (1).png"), true);
@@ -294,6 +311,9 @@ public class GameGlListener implements GLEventListener, KeyListener, MouseListen
             Exit = TextureIO.newTexture(new File("Assets/exit.png"), true);
             muteOnTexture = TextureIO.newTexture(new File("Assets/MuteOff (1).png"), true);
             muteOffTexture = TextureIO.newTexture(new File("Assets/MuteOn (1).png"), true);
+
+            p1Icon = TextureIO.newTexture(new File("Assets/p1.png"), true);
+            p2Icon = TextureIO.newTexture(new File("Assets/p2.png"), true);
 
             for (int i = 0; i < 10; i++) {
                 numbersTextures[i] = TextureIO.newTexture(new File("Assets/numbers board (" + i + ").png"), true);
@@ -351,13 +371,6 @@ public class GameGlListener implements GLEventListener, KeyListener, MouseListen
             File bombFile = new File("Assets/EnemyHelicopter/HelicopterBullet.png");
             if (bombFile.exists()) bombTexture = TextureIO.newTexture(bombFile, true);
 
-            for (int k = 1; k <= 10; k++) {
-                File p2File = new File("Assets/enemy2/Enemy2 " + k + " (1).png");
-                if (p2File.exists()) {
-                    player2Textures.add(TextureIO.newTexture(p2File, true));
-                }
-            }
-
         } catch (IOException e) {
             System.err.println(e.getMessage());
         }
@@ -383,6 +396,11 @@ public class GameGlListener implements GLEventListener, KeyListener, MouseListen
             if (isMultiplayer) drawPlayer2HealthBar(gl);
         } else {
             renderEndScreen(gl, drawable.getWidth(), drawable.getHeight());
+            if (!updatedScores) {
+                updatedScores = true;
+                GameApp.updateScore(player1Name, score);
+                if (isMultiplayer) GameApp.updateScore(player2Name, score);
+            }
         }
         if (isPaused) {
             drawPauseMenu(gl, drawable);
@@ -399,12 +417,12 @@ public class GameGlListener implements GLEventListener, KeyListener, MouseListen
                 if (leftPressed) {
                     playerX -= playerSpeed;
                     facingRight = false;
-                    backgroundScrollX += PARALLAX_SPEED;
+                    backgroundScrollX -= PARALLAX_SPEED;
                 }
                 if (rightPressed) {
                     playerX += playerSpeed;
                     facingRight = true;
-                    backgroundScrollX -= PARALLAX_SPEED;
+                    backgroundScrollX += PARALLAX_SPEED;
                 }
                 if (isJumping) {
                     playerY += verticalVelocity;
@@ -428,10 +446,19 @@ public class GameGlListener implements GLEventListener, KeyListener, MouseListen
                     p2FacingRight = true;
                     p2IsWalking = true;
                 }
+                if (p2IsJumping) {
+                    player2Y += p2VerticalVelocity;
+                    p2VerticalVelocity -= gravity;
+                    if (player2Y <= groundLevel) {
+                        player2Y = groundLevel;
+                        p2IsJumping = false;
+                        p2VerticalVelocity = 0;
+                    }
+                }
             }
 
             if (backgroundScrollX > 100) backgroundScrollX -= 100;
-            if (backgroundScrollX < -100) backgroundScrollX += 100;
+            if (backgroundScrollX < 0) backgroundScrollX += 100;
 
             final float MAX_X = 100f - playerWidth;
             if (playerX < 0) playerX = 0;
@@ -463,10 +490,6 @@ public class GameGlListener implements GLEventListener, KeyListener, MouseListen
 
     private void updateHelicopter(GL gl) {
         if (helicopter.active) {
-//           Sound c=null;
-//
-//
-//           c.playSound("Assets/Sounds/helicopter-so_e2I.wav");
 
             Sound.stop();
 
@@ -511,17 +534,22 @@ public class GameGlListener implements GLEventListener, KeyListener, MouseListen
 
     private void drawHelicopter(GL gl) {
         if (!helicopter.active || helicopterTexture == null) return;
-        float w = 20; float h = 15;
+        float w = 20;
+        float h = 15;
         gl.glEnable(GL.GL_BLEND);
         gl.glBlendFunc(GL.GL_SRC_ALPHA, GL.GL_ONE_MINUS_SRC_ALPHA);
         gl.glColor3f(1, 1, 1);
         helicopterTexture.enable();
         helicopterTexture.bind();
         gl.glBegin(GL.GL_QUADS);
-        gl.glTexCoord2f(0.0f, 0.0f); gl.glVertex2f(helicopter.x, helicopter.y + h);
-        gl.glTexCoord2f(1.0f, 0.0f); gl.glVertex2f(helicopter.x + w, helicopter.y + h);
-        gl.glTexCoord2f(1.0f, 1.0f); gl.glVertex2f(helicopter.x + w, helicopter.y);
-        gl.glTexCoord2f(0.0f, 1.0f); gl.glVertex2f(helicopter.x, helicopter.y);
+        gl.glTexCoord2f(0.0f, 0.0f);
+        gl.glVertex2f(helicopter.x, helicopter.y + h);
+        gl.glTexCoord2f(1.0f, 0.0f);
+        gl.glVertex2f(helicopter.x + w, helicopter.y + h);
+        gl.glTexCoord2f(1.0f, 1.0f);
+        gl.glVertex2f(helicopter.x + w, helicopter.y);
+        gl.glTexCoord2f(0.0f, 1.0f);
+        gl.glVertex2f(helicopter.x, helicopter.y);
         gl.glEnd();
         helicopterTexture.disable();
         gl.glDisable(GL.GL_BLEND);
@@ -539,10 +567,14 @@ public class GameGlListener implements GLEventListener, KeyListener, MouseListen
         for (Bomb b : helicopterBombs) {
             if (!b.active) continue;
             gl.glBegin(GL.GL_QUADS);
-            gl.glTexCoord2f(0.0f, 0.0f); gl.glVertex2f(b.x, b.y + b.height);
-            gl.glTexCoord2f(1.0f, 0.0f); gl.glVertex2f(b.x + b.width, b.y + b.height);
-            gl.glTexCoord2f(1.0f, 1.0f); gl.glVertex2f(b.x + b.width, b.y);
-            gl.glTexCoord2f(0.0f, 1.0f); gl.glVertex2f(b.x, b.y);
+            gl.glTexCoord2f(0.0f, 0.0f);
+            gl.glVertex2f(b.x, b.y + b.height);
+            gl.glTexCoord2f(1.0f, 0.0f);
+            gl.glVertex2f(b.x + b.width, b.y + b.height);
+            gl.glTexCoord2f(1.0f, 1.0f);
+            gl.glVertex2f(b.x + b.width, b.y);
+            gl.glTexCoord2f(0.0f, 1.0f);
+            gl.glVertex2f(b.x, b.y);
             gl.glEnd();
         }
         bombTexture.disable();
@@ -563,10 +595,14 @@ public class GameGlListener implements GLEventListener, KeyListener, MouseListen
             if (exp.active) {
 
                 gl.glBegin(GL.GL_QUADS);
-                gl.glTexCoord2f(0.0f, 0.0f); gl.glVertex2f(exp.x, exp.y + exp.height);
-                gl.glTexCoord2f(1.0f, 0.0f); gl.glVertex2f(exp.x + exp.width, exp.y + exp.height);
-                gl.glTexCoord2f(1.0f, 1.0f); gl.glVertex2f(exp.x + exp.width, exp.y);
-                gl.glTexCoord2f(0.0f, 1.0f); gl.glVertex2f(exp.x, exp.y);
+                gl.glTexCoord2f(0.0f, 0.0f);
+                gl.glVertex2f(exp.x, exp.y + exp.height);
+                gl.glTexCoord2f(1.0f, 0.0f);
+                gl.glVertex2f(exp.x + exp.width, exp.y + exp.height);
+                gl.glTexCoord2f(1.0f, 1.0f);
+                gl.glVertex2f(exp.x + exp.width, exp.y);
+                gl.glTexCoord2f(0.0f, 1.0f);
+                gl.glVertex2f(exp.x, exp.y);
                 gl.glEnd();
             }
         }
@@ -627,13 +663,15 @@ public class GameGlListener implements GLEventListener, KeyListener, MouseListen
     private void updateEnemyBullets(GL gl) {
 
         for (int i = 0; i < enemyBullets.size(); i++) {
-            EnemyBullet b=enemyBullets.get(i);
+            EnemyBullet b = enemyBullets.get(i);
 
             if (b.active) {
 
-                if (b.facingRight) {b.x += 1.5f;
+                if (b.facingRight) {
+                    b.x += 1.5f;
+                } else {
+                    b.x -= 1.5f;
                 }
-                else{ b.x -= 1.5f;}
                 if (b.x < -10 || b.x > 110) b.active = false;
             }
         }
@@ -649,8 +687,8 @@ public class GameGlListener implements GLEventListener, KeyListener, MouseListen
                 if (!e.active || e.state == 2) continue;
                 if (b.x < e.x + e.width && b.x + b.width > e.x && b.y < e.y + e.height && b.y + b.height > e.y) {
                     b.active = false;
-                    e.state = 2;        Sound.playSound("Assets/Sounds/Zombie.wav");
-
+                    e.state = 2;
+                    Sound.playSound("Assets/Sounds/Zombie.wav");
                     e.deathStartTime = System.currentTimeMillis();
                     score += 10;
                     break;
@@ -665,17 +703,14 @@ public class GameGlListener implements GLEventListener, KeyListener, MouseListen
                 playerHealth -= 10;
 
 
-
-
                 score -= 5;
                 if (score < 0) score = 0;
                 continue;
             }
 
-            if (!isMultiplayer&&playerHealth <= 0) {
-                Sound.playSound("Assets/Sounds/Death.wav");                    System.out.println("aaaaaaaaaaaaaaaaahhhh");
-                System.out.println("aaaaaaaaaaaaaaaaahhhh");
-
+            if (!isMultiplayer && playerHealth <= 0) {
+                Sound.playSound("Assets/Sounds/Death.wav");
+                System.out.println("hit");
             }
 
 
@@ -683,31 +718,30 @@ public class GameGlListener implements GLEventListener, KeyListener, MouseListen
                 if (eb.x < player2X + player2Width && eb.x + eb.width > player2X && eb.y < player2Y + player2Height && eb.y + eb.height > player2Y) {
                     eb.active = false;
                     player2Health -= 10;
-
                     break;
                 }
             }
-
             if (player2Health <= 0) {
-
                 Sound.playSound("Assets/Sounds/Death.wav");
                 System.out.println("Player 2 Died! Sound played once.");
             }
-
-
-
-
         }
 
         for (Enemy e : enemies) {
             if (e.active && e.state != 2) {
                 if (playerHealth > 0 && e.x < playerX + playerWidth && e.x + e.width > playerX && e.y < playerY + playerHeight && e.y + e.height > playerY) {
-                    e.active = false;        Sound.playSound("Assets/Sounds/Explosion.wav");
-                    spawnExplosion(playerX + playerWidth / 2, playerY); playerHealth -= 30; score -= 20; if (score < 0) score = 0;
+                    e.active = false;
+                    Sound.playSound("Assets/Sounds/Explosion.wav");
+                    spawnExplosion(playerX + playerWidth / 2, playerY);
+                    playerHealth -= 30;
+                    score -= 20;
+                    if (score < 0) score = 0;
                 }
                 if (isMultiplayer && player2Health > 0 && e.x < player2X + player2Width && e.x + e.width > player2X && e.y < player2Y + player2Height && e.y + e.height > player2Y) {
-                    e.active = false;         Sound.playSound("Assets/Sounds/Explosion.wav");
-                    spawnExplosion(player2X + player2Width / 2, player2Y); player2Health -= 30;
+                    e.active = false;
+                    Sound.playSound("Assets/Sounds/Explosion.wav");
+                    spawnExplosion(player2X + player2Width / 2, player2Y);
+                    player2Health -= 30;
                 }
             }
         }
@@ -718,11 +752,16 @@ public class GameGlListener implements GLEventListener, KeyListener, MouseListen
                 if (playerHealth > 0 && bomb.x < playerX + playerWidth && bomb.x + bomb.width > playerX && bomb.y < playerY + playerHeight && bomb.y + bomb.height > playerY) {
                     bomb.active = false;
                     Sound.playSound("Assets/Sounds/Explosion.wav");
-                    spawnExplosion(bomb.x, bomb.y); playerHealth -= 30; score -= 10; if (score < 0) score = 0;
+                    spawnExplosion(bomb.x, bomb.y);
+                    playerHealth -= 30;
+                    score -= 10;
+                    if (score < 0) score = 0;
                 }
                 if (isMultiplayer && player2Health > 0 && bomb.x < player2X + player2Width && bomb.x + bomb.width > player2X && bomb.y < player2Y + player2Height && bomb.y + bomb.height > player2Y) {
-                    bomb.active = false;         Sound.playSound("Assets/Sounds/Explosion.wav");
-                    spawnExplosion(bomb.x, bomb.y); player2Health -= 30;
+                    bomb.active = false;
+                    Sound.playSound("Assets/Sounds/Explosion.wav");
+                    spawnExplosion(bomb.x, bomb.y);
+                    player2Health -= 30;
                 }
             }
         }
@@ -748,22 +787,33 @@ public class GameGlListener implements GLEventListener, KeyListener, MouseListen
                 tex = (e.type == 0) ? enemy_zombi[0] : enemy1_Scintest[0];
             }
             if (tex != null) {
-                gl.glMatrixMode(GL.GL_MODELVIEW); gl.glPushMatrix();
+                gl.glMatrixMode(GL.GL_MODELVIEW);
+                gl.glPushMatrix();
                 gl.glTranslatef(e.x, e.y, 0);
                 gl.glScalef(ENEMY_SCALE, ENEMY_SCALE, 1.0f);
-                tex.enable(); tex.bind();
+                tex.enable();
+                tex.bind();
                 gl.glBegin(GL.GL_QUADS);
-                float w = e.width; float h = e.height;
+                float w = e.width;
+                float h = e.height;
                 if (e.facingRight) {
-                    gl.glTexCoord2f(0.0f, 0.0f); gl.glVertex2f(0.0f, h);
-                    gl.glTexCoord2f(1.0f, 0.0f); gl.glVertex2f(w, h);
-                    gl.glTexCoord2f(1.0f, 1.0f); gl.glVertex2f(w, 0.0f);
-                    gl.glTexCoord2f(0.0f, 1.0f); gl.glVertex2f(0.0f, 0.0f);
+                    gl.glTexCoord2f(0.0f, 0.0f);
+                    gl.glVertex2f(0.0f, h);
+                    gl.glTexCoord2f(1.0f, 0.0f);
+                    gl.glVertex2f(w, h);
+                    gl.glTexCoord2f(1.0f, 1.0f);
+                    gl.glVertex2f(w, 0.0f);
+                    gl.glTexCoord2f(0.0f, 1.0f);
+                    gl.glVertex2f(0.0f, 0.0f);
                 } else {
-                    gl.glTexCoord2f(1.0f, 0.0f); gl.glVertex2f(0.0f, h);
-                    gl.glTexCoord2f(0.0f, 0.0f); gl.glVertex2f(w, h);
-                    gl.glTexCoord2f(0.0f, 1.0f); gl.glVertex2f(w, 0.0f);
-                    gl.glTexCoord2f(1.0f, 1.0f); gl.glVertex2f(0.0f, 0.0f);
+                    gl.glTexCoord2f(1.0f, 0.0f);
+                    gl.glVertex2f(0.0f, h);
+                    gl.glTexCoord2f(0.0f, 0.0f);
+                    gl.glVertex2f(w, h);
+                    gl.glTexCoord2f(0.0f, 1.0f);
+                    gl.glVertex2f(w, 0.0f);
+                    gl.glTexCoord2f(1.0f, 1.0f);
+                    gl.glVertex2f(0.0f, 0.0f);
                 }
                 gl.glEnd();
                 gl.glPopMatrix();
@@ -777,14 +827,20 @@ public class GameGlListener implements GLEventListener, KeyListener, MouseListen
         Texture tex = enemy1_Scintest[2];
         if (tex == null) return;
         gl.glEnable(GL.GL_BLEND);
-        tex.enable(); tex.bind(); gl.glColor3f(1, 1, 1);
+        tex.enable();
+        tex.bind();
+        gl.glColor3f(1, 1, 1);
         for (EnemyBullet b : enemyBullets) {
             if (!b.active) continue;
             gl.glBegin(GL.GL_QUADS);
-            gl.glTexCoord2f(0.0f, 0.0f); gl.glVertex2f(b.x, b.y + b.height);
-            gl.glTexCoord2f(1.0f, 0.0f); gl.glVertex2f(b.x + b.width, b.y + b.height);
-            gl.glTexCoord2f(1.0f, 1.0f); gl.glVertex2f(b.x + b.width, b.y);
-            gl.glTexCoord2f(0.0f, 1.0f); gl.glVertex2f(b.x, b.y);
+            gl.glTexCoord2f(0.0f, 0.0f);
+            gl.glVertex2f(b.x, b.y + b.height);
+            gl.glTexCoord2f(1.0f, 0.0f);
+            gl.glVertex2f(b.x + b.width, b.y + b.height);
+            gl.glTexCoord2f(1.0f, 1.0f);
+            gl.glVertex2f(b.x + b.width, b.y);
+            gl.glTexCoord2f(0.0f, 1.0f);
+            gl.glVertex2f(b.x, b.y);
             gl.glEnd();
         }
         tex.disable();
@@ -795,7 +851,8 @@ public class GameGlListener implements GLEventListener, KeyListener, MouseListen
         for (int i = 0; i < bullets.size(); i++) {
             Bullet b = bullets.get(i);
             if (b.active) {
-                if (b.facingRight) b.x += 2; else b.x -= 2;
+                if (b.facingRight) b.x += 2;
+                else b.x -= 2;
                 if (b.x < 0 || b.x > 100) b.active = false;
             }
         }
@@ -804,64 +861,101 @@ public class GameGlListener implements GLEventListener, KeyListener, MouseListen
 
     private void drawBullets(GL gl) {
         if (bulletTexture == null) return;
-        bulletTexture.enable(); bulletTexture.bind();
+        gl.glEnable(GL.GL_BLEND);
+        gl.glBlendFunc(GL.GL_SRC_ALPHA, GL.GL_ONE_MINUS_SRC_ALPHA);
+        bulletTexture.enable();
+        bulletTexture.bind();
         gl.glBegin(GL.GL_QUADS);
         for (Bullet b : bullets) {
             if (b.active) {
-                gl.glTexCoord2f(0.0f, 0.0f); gl.glVertex2f(b.x, b.y + b.height);
-                gl.glTexCoord2f(1.0f, 0.0f); gl.glVertex2f(b.x + b.width, b.y + b.height);
-                gl.glTexCoord2f(1.0f, 1.0f); gl.glVertex2f(b.x + b.width, b.y);
-                gl.glTexCoord2f(0.0f, 1.0f); gl.glVertex2f(b.x, b.y);
+                gl.glTexCoord2f(0.0f, 0.0f);
+                gl.glVertex2f(b.x, b.y + b.height);
+                gl.glTexCoord2f(1.0f, 0.0f);
+                gl.glVertex2f(b.x + b.width, b.y + b.height);
+                gl.glTexCoord2f(1.0f, 1.0f);
+                gl.glVertex2f(b.x + b.width, b.y);
+                gl.glTexCoord2f(0.0f, 1.0f);
+                gl.glVertex2f(b.x, b.y);
             }
         }
         gl.glEnd();
         bulletTexture.disable();
-    }
-
-    private void drawPlayer1(GL gl) {
-        if (!isPaused && !isGameOver) {
-            if (leftPressed) { playerX -= 0.8f; facingRight = false; }
-            if (rightPressed) { playerX += 0.8f; facingRight = true; }
-            playerX = Math.max(0, Math.min(playerX, 90));
-            if (isJumping) {
-                playerY += verticalVelocity; verticalVelocity -= gravity;
-                if (playerY <= groundLevel) { playerY = groundLevel; isJumping = false; verticalVelocity = 0; }
-            }
-            animateSprite(gl);
-            updateBullets(gl);
-        }
+        gl.glDisable(GL.GL_BLEND);
     }
 
     private void drawPlayer2(GL gl) {
         if (!isPaused && !isGameOver) {
-            if (p2LeftPressed) { player2X -= 0.8f; p2FacingRight = false; }
-            if (p2RightPressed) { player2X += 0.8f; p2FacingRight = true; }
-            player2X = Math.max(0, Math.min(player2X, 90));
+            ArrayList<Texture> currentAnim;
+            if (p2IsShooting) {
+                currentAnim = shootingTextures;
+                if (System.currentTimeMillis() - p2ShootingStartTime > 300) p2IsShooting = false;
+            } else if (p2IsJumping && !jumpTextures.isEmpty()) {
+                currentAnim = jumpTextures;
+            } else if (p2IsWalking) {
+                currentAnim = walkingTextures;
+            } else {
+                currentAnim = idleTextures;
+            }
 
-            if (!player2Textures.isEmpty()) {
-                if (p2IsWalking) {
-                    if (System.currentTimeMillis() - p2LastFrameTime > 75) { p2FrameIndex++; p2LastFrameTime = System.currentTimeMillis(); }
-                    if (p2FrameIndex >= player2Textures.size()) p2FrameIndex = 0;
-                } else p2FrameIndex = 0;
+            if (currentAnim.isEmpty()) return;
+            if (System.currentTimeMillis() - p2LastFrameTime > 75) {
+                p2FrameIndex++;
+                p2LastFrameTime = System.currentTimeMillis();
+            }
+            if (p2FrameIndex >= currentAnim.size()) p2FrameIndex = 0;
 
-                Texture p2Frame = player2Textures.get(p2FrameIndex);
-                if (p2Frame != null) {
-                    gl.glEnable(GL.GL_BLEND); gl.glBlendFunc(GL.GL_SRC_ALPHA, GL.GL_ONE_MINUS_SRC_ALPHA);
-                    p2Frame.enable(); p2Frame.bind(); gl.glColor3f(1, 1, 1);
-                    gl.glBegin(GL.GL_QUADS);
-                    if (p2FacingRight) {
-                        gl.glTexCoord2f(1.0f, 0.0f); gl.glVertex2f(player2X, player2Y + 15);
-                        gl.glTexCoord2f(0.0f, 0.0f); gl.glVertex2f(player2X + 10, player2Y + 15);
-                        gl.glTexCoord2f(0.0f, 1.0f); gl.glVertex2f(player2X + 10, player2Y);
-                        gl.glTexCoord2f(1.0f, 1.0f); gl.glVertex2f(player2X, player2Y);
-                    } else {
-                        gl.glTexCoord2f(0.0f, 0.0f); gl.glVertex2f(player2X, player2Y + 15);
-                        gl.glTexCoord2f(1.0f, 0.0f); gl.glVertex2f(player2X + 10, player2Y + 15);
-                        gl.glTexCoord2f(1.0f, 1.0f); gl.glVertex2f(player2X + 10, player2Y);
-                        gl.glTexCoord2f(0.0f, 1.0f); gl.glVertex2f(player2X, player2Y);
-                    }
-                    gl.glEnd(); p2Frame.disable();
+            Texture frame = currentAnim.get(p2FrameIndex);
+            if (frame != null) {
+                gl.glEnable(GL.GL_BLEND);
+                gl.glBlendFunc(GL.GL_SRC_ALPHA, GL.GL_ONE_MINUS_SRC_ALPHA);
+                frame.enable();
+                frame.bind();
+                gl.glColor3f(1, 1, 1);
+                gl.glBegin(GL.GL_QUADS);
+                if (p2FacingRight) {
+                    gl.glTexCoord2f(0.0f, 0.0f);
+                    gl.glVertex2f(player2X, player2Y + player2Height);
+                    gl.glTexCoord2f(1.0f, 0.0f);
+                    gl.glVertex2f(player2X + player2Width, player2Y + player2Height);
+                    gl.glTexCoord2f(1.0f, 1.0f);
+                    gl.glVertex2f(player2X + player2Width, player2Y);
+                    gl.glTexCoord2f(0.0f, 1.0f);
+                    gl.glVertex2f(player2X, player2Y);
+                } else {
+                    gl.glTexCoord2f(1.0f, 0.0f);
+                    gl.glVertex2f(player2X, player2Y + player2Height);
+                    gl.glTexCoord2f(0.0f, 0.0f);
+                    gl.glVertex2f(player2X + player2Width, player2Y + player2Height);
+                    gl.glTexCoord2f(0.0f, 1.0f);
+                    gl.glVertex2f(player2X + player2Width, player2Y);
+                    gl.glTexCoord2f(1.0f, 1.0f);
+                    gl.glVertex2f(player2X, player2Y);
                 }
+                gl.glEnd();
+                frame.disable();
+
+                if (p2Icon != null) {
+                    float iconW = 5;
+                    float iconH = 5;
+                    float iconX = player2X + (player2Width / 2) - (iconW / 2);
+                    float iconY = player2Y + player2Height + 2;
+
+                    p2Icon.enable();
+                    p2Icon.bind();
+                    gl.glBegin(GL.GL_QUADS);
+                    gl.glTexCoord2f(0.0f, 0.0f);
+                    gl.glVertex2f(iconX, iconY + iconH);
+                    gl.glTexCoord2f(1.0f, 0.0f);
+                    gl.glVertex2f(iconX + iconW, iconY + iconH);
+                    gl.glTexCoord2f(1.0f, 1.0f);
+                    gl.glVertex2f(iconX + iconW, iconY);
+                    gl.glTexCoord2f(0.0f, 1.0f);
+                    gl.glVertex2f(iconX, iconY);
+                    gl.glEnd();
+                    p2Icon.disable();
+                }
+
+                gl.glDisable(GL.GL_BLEND);
             }
         }
     }
@@ -876,101 +970,188 @@ public class GameGlListener implements GLEventListener, KeyListener, MouseListen
         else currentAnim = idleTextures;
 
         if (currentAnim.isEmpty()) return;
-        if (System.currentTimeMillis() - lastFrameTime > 75) { currentFrameIndex++; lastFrameTime = System.currentTimeMillis(); }
+        if (System.currentTimeMillis() - lastFrameTime > 75) {
+            currentFrameIndex++;
+            lastFrameTime = System.currentTimeMillis();
+        }
         if (currentFrameIndex >= currentAnim.size()) currentFrameIndex = 0;
 
         Texture frame = currentAnim.get(currentFrameIndex);
         if (frame != null) {
-            gl.glEnable(GL.GL_BLEND); gl.glBlendFunc(GL.GL_SRC_ALPHA, GL.GL_ONE_MINUS_SRC_ALPHA);
-            frame.enable(); frame.bind(); gl.glColor3f(1, 1, 1);
+            gl.glEnable(GL.GL_BLEND);
+            gl.glBlendFunc(GL.GL_SRC_ALPHA, GL.GL_ONE_MINUS_SRC_ALPHA);
+            frame.enable();
+            frame.bind();
+            gl.glColor3f(1, 1, 1);
             gl.glBegin(GL.GL_QUADS);
             if (facingRight) {
-                gl.glTexCoord2f(0.0f, 0.0f); gl.glVertex2f(playerX, playerY + playerHeight);
-                gl.glTexCoord2f(1.0f, 0.0f); gl.glVertex2f(playerX + playerWidth, playerY + playerHeight);
-                gl.glTexCoord2f(1.0f, 1.0f); gl.glVertex2f(playerX + playerWidth, playerY);
-                gl.glTexCoord2f(0.0f, 1.0f); gl.glVertex2f(playerX, playerY);
+                gl.glTexCoord2f(0.0f, 0.0f);
+                gl.glVertex2f(playerX, playerY + playerHeight);
+                gl.glTexCoord2f(1.0f, 0.0f);
+                gl.glVertex2f(playerX + playerWidth, playerY + playerHeight);
+                gl.glTexCoord2f(1.0f, 1.0f);
+                gl.glVertex2f(playerX + playerWidth, playerY);
+                gl.glTexCoord2f(0.0f, 1.0f);
+                gl.glVertex2f(playerX, playerY);
             } else {
-                gl.glTexCoord2f(1.0f, 0.0f); gl.glVertex2f(playerX, playerY + playerHeight);
-                gl.glTexCoord2f(0.0f, 0.0f); gl.glVertex2f(playerX + playerWidth, playerY + playerHeight);
-                gl.glTexCoord2f(0.0f, 1.0f); gl.glVertex2f(playerX + playerWidth, playerY);
-                gl.glTexCoord2f(1.0f, 1.0f); gl.glVertex2f(playerX, playerY);
+                gl.glTexCoord2f(1.0f, 0.0f);
+                gl.glVertex2f(playerX, playerY + playerHeight);
+                gl.glTexCoord2f(0.0f, 0.0f);
+                gl.glVertex2f(playerX + playerWidth, playerY + playerHeight);
+                gl.glTexCoord2f(0.0f, 1.0f);
+                gl.glVertex2f(playerX + playerWidth, playerY);
+                gl.glTexCoord2f(1.0f, 1.0f);
+                gl.glVertex2f(playerX, playerY);
             }
-            gl.glEnd(); frame.disable(); gl.glDisable(GL.GL_BLEND);
+            gl.glEnd();
+            frame.disable();
+
+            if (p1Icon != null) {
+                float iconW = 5;
+                float iconH = 5;
+                float iconX = playerX + (playerWidth / 2) - (iconW / 2);
+                float iconY = playerY + playerHeight + 2;
+
+                p1Icon.enable();
+                p1Icon.bind();
+                gl.glBegin(GL.GL_QUADS);
+                gl.glTexCoord2f(0.0f, 0.0f);
+                gl.glVertex2f(iconX, iconY + iconH);
+                gl.glTexCoord2f(1.0f, 0.0f);
+                gl.glVertex2f(iconX + iconW, iconY + iconH);
+                gl.glTexCoord2f(1.0f, 1.0f);
+                gl.glVertex2f(iconX + iconW, iconY);
+                gl.glTexCoord2f(0.0f, 1.0f);
+                gl.glVertex2f(iconX, iconY);
+                gl.glEnd();
+                p1Icon.disable();
+            }
+
+            gl.glDisable(GL.GL_BLEND);
         }
     }
 
     private void drawBackground(GL gl) {
         if (backgroundTexture == null) return;
-        gl.glMatrixMode(GL.GL_PROJECTION); gl.glPushMatrix(); gl.glLoadIdentity();
+        gl.glMatrixMode(GL.GL_PROJECTION);
+        gl.glPushMatrix();
+        gl.glLoadIdentity();
         gl.glOrtho(0, 100, 0, 100, -1, 1);
-        gl.glMatrixMode(GL.GL_MODELVIEW); gl.glPushMatrix(); gl.glLoadIdentity();
-        gl.glDisable(GL.GL_DEPTH_TEST); gl.glColor3f(1, 1, 1);
-        backgroundTexture.enable(); backgroundTexture.bind();
-        final float BG_WIDTH = 100.0f;
-        for (int i = -1; i <= 1; i++) {
-            float currentX = backgroundScrollX + (i * BG_WIDTH);
-            gl.glBegin(GL.GL_QUADS);
-            gl.glTexCoord2f(0.0f, 0.0f); gl.glVertex2f(currentX, 100);
-            gl.glTexCoord2f(1.0f, 0.0f); gl.glVertex2f(currentX + BG_WIDTH, 100);
-            gl.glTexCoord2f(1.0f, 1.0f); gl.glVertex2f(currentX + BG_WIDTH, 0);
-            gl.glTexCoord2f(0.0f, 1.0f); gl.glVertex2f(currentX, 0);
-            gl.glEnd();
-        }
+        gl.glMatrixMode(GL.GL_MODELVIEW);
+        gl.glPushMatrix();
+        gl.glLoadIdentity();
+        gl.glDisable(GL.GL_DEPTH_TEST);
+        gl.glColor3f(1, 1, 1);
+        backgroundTexture.enable();
+        backgroundTexture.bind();
+
+        float texOffset = backgroundScrollX / 100.0f;
+        float sliceWidth = 0.08f;
+
+        gl.glBegin(GL.GL_QUADS);
+        gl.glTexCoord2f(texOffset, 0.0f);
+        gl.glVertex2f(0.0f, 100.0f);
+        gl.glTexCoord2f(texOffset + sliceWidth, 0.0f);
+        gl.glVertex2f(100.0f, 100.0f);
+        gl.glTexCoord2f(texOffset + sliceWidth, 1.0f);
+        gl.glVertex2f(100.0f, 0.0f);
+        gl.glTexCoord2f(texOffset, 1.0f);
+        gl.glVertex2f(0.0f, 0.0f);
+        gl.glEnd();
+
         backgroundTexture.disable();
-        gl.glPopMatrix(); gl.glMatrixMode(GL.GL_PROJECTION); gl.glPopMatrix(); gl.glMatrixMode(GL.GL_MODELVIEW);
+        gl.glPopMatrix();
+        gl.glMatrixMode(GL.GL_PROJECTION);
+        gl.glPopMatrix();
+        gl.glMatrixMode(GL.GL_MODELVIEW);
     }
 
     private void drawPlayer2HealthBar(GL gl) {
         if (healthImages != null) {
             int index;
-            if (player2Health >= 80) index = 4; else if (player2Health >= 60) index = 3;
-            else if (player2Health >= 40) index = 2; else if (player2Health >= 20) index = 1; else index = 0;
+            if (player2Health >= 80) index = 4;
+            else if (player2Health >= 60) index = 3;
+            else if (player2Health >= 40) index = 2;
+            else if (player2Health >= 20) index = 1;
+            else index = 0;
             if (healthImages[index] != null) {
-                float x = 2; float y = 70; float w = 30; float h = 8;
-                gl.glColor3f(1.0f, 1.0f, 1.0f); gl.glEnable(GL.GL_BLEND); gl.glBlendFunc(GL.GL_SRC_ALPHA, GL.GL_ONE_MINUS_SRC_ALPHA);
-                healthImages[index].enable(); healthImages[index].bind();
+                float x = 2;
+                float y = 70;
+                float w = 30;
+                float h = 8;
+                gl.glColor3f(1.0f, 1.0f, 1.0f);
+                gl.glEnable(GL.GL_BLEND);
+                gl.glBlendFunc(GL.GL_SRC_ALPHA, GL.GL_ONE_MINUS_SRC_ALPHA);
+                healthImages[index].enable();
+                healthImages[index].bind();
                 gl.glBegin(GL.GL_QUADS);
-                gl.glTexCoord2f(0.0f, 0.0f); gl.glVertex2f(x, y + h);
-                gl.glTexCoord2f(1.0f, 0.0f); gl.glVertex2f(x + w, y + h);
-                gl.glTexCoord2f(1.0f, 1.0f); gl.glVertex2f(x + w, y);
-                gl.glTexCoord2f(0.0f, 1.0f); gl.glVertex2f(x, y);
+                gl.glTexCoord2f(0.0f, 0.0f);
+                gl.glVertex2f(x, y + h);
+                gl.glTexCoord2f(1.0f, 0.0f);
+                gl.glVertex2f(x + w, y + h);
+                gl.glTexCoord2f(1.0f, 1.0f);
+                gl.glVertex2f(x + w, y);
+                gl.glTexCoord2f(0.0f, 1.0f);
+                gl.glVertex2f(x, y);
                 gl.glEnd();
-                healthImages[index].disable(); gl.glDisable(GL.GL_BLEND);
+                healthImages[index].disable();
+                gl.glDisable(GL.GL_BLEND);
             }
         }
     }
 
     private void drawHUD(GL gl, GLAutoDrawable drawable) {
-        int width = drawable.getWidth(); int height = drawable.getHeight();
-        gl.glColor3f(1.0f, 1.0f, 1.0f); gl.glEnable(GL.GL_BLEND); gl.glBlendFunc(GL.GL_SRC_ALPHA, GL.GL_ONE_MINUS_SRC_ALPHA);
+        int width = drawable.getWidth();
+        int height = drawable.getHeight();
+        gl.glColor3f(1.0f, 1.0f, 1.0f);
+        gl.glEnable(GL.GL_BLEND);
+        gl.glBlendFunc(GL.GL_SRC_ALPHA, GL.GL_ONE_MINUS_SRC_ALPHA);
         if (scoreBoardTexture != null) {
-            scoreBoardTexture.enable(); scoreBoardTexture.bind();
+            scoreBoardTexture.enable();
+            scoreBoardTexture.bind();
             gl.glBegin(GL.GL_QUADS);
-            gl.glTexCoord2f(0.0f, 0.0f); gl.glVertex2f(scoreBoardBounds.x, scoreBoardBounds.y + scoreBoardBounds.height);
-            gl.glTexCoord2f(1.0f, 0.0f); gl.glVertex2f(scoreBoardBounds.x + scoreBoardBounds.width, scoreBoardBounds.y + scoreBoardBounds.height);
-            gl.glTexCoord2f(1.0f, 1.0f); gl.glVertex2f(scoreBoardBounds.x + scoreBoardBounds.width, scoreBoardBounds.y);
-            gl.glTexCoord2f(0.0f, 1.0f); gl.glVertex2f(scoreBoardBounds.x, scoreBoardBounds.y);
-            gl.glEnd(); scoreBoardTexture.disable();
+            gl.glTexCoord2f(0.0f, 0.0f);
+            gl.glVertex2f(scoreBoardBounds.x, scoreBoardBounds.y + scoreBoardBounds.height);
+            gl.glTexCoord2f(1.0f, 0.0f);
+            gl.glVertex2f(scoreBoardBounds.x + scoreBoardBounds.width, scoreBoardBounds.y + scoreBoardBounds.height);
+            gl.glTexCoord2f(1.0f, 1.0f);
+            gl.glVertex2f(scoreBoardBounds.x + scoreBoardBounds.width, scoreBoardBounds.y);
+            gl.glTexCoord2f(0.0f, 1.0f);
+            gl.glVertex2f(scoreBoardBounds.x, scoreBoardBounds.y);
+            gl.glEnd();
+            scoreBoardTexture.disable();
         }
         drawNumber(gl, score, scoreBoardBounds.x + scoreBoardBounds.width + 1, scoreBoardBounds.y + 1, 4, 6, 3);
         if (timerBoardTexture != null) {
-            timerBoardTexture.enable(); timerBoardTexture.bind();
+            timerBoardTexture.enable();
+            timerBoardTexture.bind();
             gl.glBegin(GL.GL_QUADS);
-            gl.glTexCoord2f(0.0f, 0.0f); gl.glVertex2f(timerBoardBounds.x, timerBoardBounds.y + timerBoardBounds.height);
-            gl.glTexCoord2f(1.0f, 0.0f); gl.glVertex2f(timerBoardBounds.x + timerBoardBounds.width, timerBoardBounds.y + timerBoardBounds.height);
-            gl.glTexCoord2f(1.0f, 1.0f); gl.glVertex2f(timerBoardBounds.x + timerBoardBounds.width, timerBoardBounds.y);
-            gl.glTexCoord2f(0.0f, 1.0f); gl.glVertex2f(timerBoardBounds.x, timerBoardBounds.y);
-            gl.glEnd(); timerBoardTexture.disable();
+            gl.glTexCoord2f(0.0f, 0.0f);
+            gl.glVertex2f(timerBoardBounds.x, timerBoardBounds.y + timerBoardBounds.height);
+            gl.glTexCoord2f(1.0f, 0.0f);
+            gl.glVertex2f(timerBoardBounds.x + timerBoardBounds.width, timerBoardBounds.y + timerBoardBounds.height);
+            gl.glTexCoord2f(1.0f, 1.0f);
+            gl.glVertex2f(timerBoardBounds.x + timerBoardBounds.width, timerBoardBounds.y);
+            gl.glTexCoord2f(0.0f, 1.0f);
+            gl.glVertex2f(timerBoardBounds.x, timerBoardBounds.y);
+            gl.glEnd();
+            timerBoardTexture.disable();
         }
         drawNumber(gl, timerSeconds, timerBoardBounds.x + timerBoardBounds.width + 1, timerBoardBounds.y + 1, 4, 6, 2);
         if (!isPaused && pauseButtonTexture != null) {
-            pauseButtonTexture.enable(); pauseButtonTexture.bind();
+            pauseButtonTexture.enable();
+            pauseButtonTexture.bind();
             gl.glBegin(GL.GL_QUADS);
-            gl.glTexCoord2f(0.0f, 0.0f); gl.glVertex2f(pauseGameBtnBounds.x, pauseGameBtnBounds.y + pauseGameBtnBounds.height);
-            gl.glTexCoord2f(1.0f, 0.0f); gl.glVertex2f(pauseGameBtnBounds.x + pauseGameBtnBounds.width, pauseGameBtnBounds.y + pauseGameBtnBounds.height);
-            gl.glTexCoord2f(1.0f, 1.0f); gl.glVertex2f(pauseGameBtnBounds.x + pauseGameBtnBounds.width, pauseGameBtnBounds.y);
-            gl.glTexCoord2f(0.0f, 1.0f); gl.glVertex2f(pauseGameBtnBounds.x, pauseGameBtnBounds.y);
-            gl.glEnd(); pauseButtonTexture.disable();
+            gl.glTexCoord2f(0.0f, 0.0f);
+            gl.glVertex2f(pauseGameBtnBounds.x, pauseGameBtnBounds.y + pauseGameBtnBounds.height);
+            gl.glTexCoord2f(1.0f, 0.0f);
+            gl.glVertex2f(pauseGameBtnBounds.x + pauseGameBtnBounds.width, pauseGameBtnBounds.y + pauseGameBtnBounds.height);
+            gl.glTexCoord2f(1.0f, 1.0f);
+            gl.glVertex2f(pauseGameBtnBounds.x + pauseGameBtnBounds.width, pauseGameBtnBounds.y);
+            gl.glTexCoord2f(0.0f, 1.0f);
+            gl.glVertex2f(pauseGameBtnBounds.x, pauseGameBtnBounds.y);
+            gl.glEnd();
+            pauseButtonTexture.disable();
         }
         gl.glDisable(GL.GL_BLEND);
     }
@@ -979,19 +1160,33 @@ public class GameGlListener implements GLEventListener, KeyListener, MouseListen
         if (healthImages != null) {
             int index;
 
-            if (playerHealth >= 80) index = 4; else if (playerHealth >= 60) index = 3;
-            else if (playerHealth >= 40) index = 2; else if (playerHealth >= 20) index = 1; else index = 0;
+            if (playerHealth >= 80) index = 4;
+            else if (playerHealth >= 60) index = 3;
+            else if (playerHealth >= 40) index = 2;
+            else if (playerHealth >= 20) index = 1;
+            else index = 0;
             if (healthImages[index] != null) {
-                float x = 2; float y = 82; float w = 30; float h = 8;
-                gl.glColor3f(1.0f, 1.0f, 1.0f); gl.glEnable(GL.GL_BLEND); gl.glBlendFunc(GL.GL_SRC_ALPHA, GL.GL_ONE_MINUS_SRC_ALPHA);
-                healthImages[index].enable(); healthImages[index].bind();
+                float x = 2;
+                float y = 82;
+                float w = 30;
+                float h = 8;
+                gl.glColor3f(1.0f, 1.0f, 1.0f);
+                gl.glEnable(GL.GL_BLEND);
+                gl.glBlendFunc(GL.GL_SRC_ALPHA, GL.GL_ONE_MINUS_SRC_ALPHA);
+                healthImages[index].enable();
+                healthImages[index].bind();
                 gl.glBegin(GL.GL_QUADS);
-                gl.glTexCoord2f(0.0f, 0.0f); gl.glVertex2f(x, y + h);
-                gl.glTexCoord2f(1.0f, 0.0f); gl.glVertex2f(x + w, y + h);
-                gl.glTexCoord2f(1.0f, 1.0f); gl.glVertex2f(x + w, y);
-                gl.glTexCoord2f(0.0f, 1.0f); gl.glVertex2f(x, y);
+                gl.glTexCoord2f(0.0f, 0.0f);
+                gl.glVertex2f(x, y + h);
+                gl.glTexCoord2f(1.0f, 0.0f);
+                gl.glVertex2f(x + w, y + h);
+                gl.glTexCoord2f(1.0f, 1.0f);
+                gl.glVertex2f(x + w, y);
+                gl.glTexCoord2f(0.0f, 1.0f);
+                gl.glVertex2f(x, y);
                 gl.glEnd();
-                healthImages[index].disable(); gl.glDisable(GL.GL_BLEND);
+                healthImages[index].disable();
+                gl.glDisable(GL.GL_BLEND);
             }
         }
     }
@@ -1002,14 +1197,20 @@ public class GameGlListener implements GLEventListener, KeyListener, MouseListen
             int digit = Character.getNumericValue(numStr.charAt(i));
             Texture tex = numbersTextures[digit];
             if (tex != null) {
-                tex.enable(); tex.bind();
+                tex.enable();
+                tex.bind();
                 TextureCoords coords = tex.getImageTexCoords();
                 gl.glBegin(GL.GL_QUADS);
-                gl.glTexCoord2f(coords.left(), coords.top()); gl.glVertex2f(x + (i * width), y + height);
-                gl.glTexCoord2f(coords.right(), coords.top()); gl.glVertex2f(x + (i * width) + width, y + height);
-                gl.glTexCoord2f(coords.right(), coords.bottom()); gl.glVertex2f(x + (i * width) + width, y);
-                gl.glTexCoord2f(coords.left(), coords.bottom()); gl.glVertex2f(x + (i * width), y);
-                gl.glEnd(); tex.disable();
+                gl.glTexCoord2f(coords.left(), coords.top());
+                gl.glVertex2f(x + (i * width), y + height);
+                gl.glTexCoord2f(coords.right(), coords.top());
+                gl.glVertex2f(x + (i * width) + width, y + height);
+                gl.glTexCoord2f(coords.right(), coords.bottom());
+                gl.glVertex2f(x + (i * width) + width, y);
+                gl.glTexCoord2f(coords.left(), coords.bottom());
+                gl.glVertex2f(x + (i * width), y);
+                gl.glEnd();
+                tex.disable();
             }
         }
     }
@@ -1017,51 +1218,82 @@ public class GameGlListener implements GLEventListener, KeyListener, MouseListen
     private void drawMuteButton(GL gl) {
         Texture currentMuteTexture = Sound.isMuted() ? muteOffTexture : muteOnTexture;
         if (currentMuteTexture != null) {
-            float x = muteBtnBounds.x; float y = muteBtnBounds.y; float w = muteBtnBounds.width; float h = muteBtnBounds.height;
-            currentMuteTexture.enable(); currentMuteTexture.bind();
+            float x = muteBtnBounds.x;
+            float y = muteBtnBounds.y;
+            float w = muteBtnBounds.width;
+            float h = muteBtnBounds.height;
+            currentMuteTexture.enable();
+            currentMuteTexture.bind();
             gl.glColor3f(1.0f, 1.0f, 1.0f);
             gl.glBegin(GL.GL_QUADS);
-            gl.glTexCoord2f(0.0f, 0.0f); gl.glVertex2f(x, y + h);
-            gl.glTexCoord2f(1.0f, 0.0f); gl.glVertex2f(x + w, y + h);
-            gl.glTexCoord2f(1.0f, 1.0f); gl.glVertex2f(x + w, y);
-            gl.glTexCoord2f(0.0f, 1.0f); gl.glVertex2f(x, y);
-            gl.glEnd(); currentMuteTexture.disable();
+            gl.glTexCoord2f(0.0f, 0.0f);
+            gl.glVertex2f(x, y + h);
+            gl.glTexCoord2f(1.0f, 0.0f);
+            gl.glVertex2f(x + w, y + h);
+            gl.glTexCoord2f(1.0f, 1.0f);
+            gl.glVertex2f(x + w, y);
+            gl.glTexCoord2f(0.0f, 1.0f);
+            gl.glVertex2f(x, y);
+            gl.glEnd();
+            currentMuteTexture.disable();
         }
     }
 
     private void drawPauseMenu(GL gl, GLAutoDrawable drawable) {
-        gl.glEnable(GL.GL_BLEND); gl.glBlendFunc(GL.GL_SRC_ALPHA, GL.GL_ONE_MINUS_SRC_ALPHA);
+        gl.glEnable(GL.GL_BLEND);
+        gl.glBlendFunc(GL.GL_SRC_ALPHA, GL.GL_ONE_MINUS_SRC_ALPHA);
         gl.glColor4f(0.0f, 0.0f, 0.0f, 0.7f);
         gl.glBegin(GL.GL_QUADS);
-        gl.glVertex2f(0, 0); gl.glVertex2f(100, 0); gl.glVertex2f(100, 100); gl.glVertex2f(0, 100);
+        gl.glVertex2f(0, 0);
+        gl.glVertex2f(100, 0);
+        gl.glVertex2f(100, 100);
+        gl.glVertex2f(0, 100);
         gl.glEnd();
         gl.glColor3f(1.0f, 1.0f, 1.0f);
         if (gamePausedTexture != null) {
-            gamePausedTexture.enable(); gamePausedTexture.bind();
+            gamePausedTexture.enable();
+            gamePausedTexture.bind();
             gl.glBegin(GL.GL_QUADS);
-            gl.glTexCoord2f(0.0f, 0.0f); gl.glVertex2f(gamePausedBounds.x, gamePausedBounds.y + gamePausedBounds.height);
-            gl.glTexCoord2f(1.0f, 0.0f); gl.glVertex2f(gamePausedBounds.x + gamePausedBounds.width, gamePausedBounds.y + gamePausedBounds.height);
-            gl.glTexCoord2f(1.0f, 1.0f); gl.glVertex2f(gamePausedBounds.x + gamePausedBounds.width, gamePausedBounds.y);
-            gl.glTexCoord2f(0.0f, 1.0f); gl.glVertex2f(gamePausedBounds.x, gamePausedBounds.y);
-            gl.glEnd(); gamePausedTexture.disable();
+            gl.glTexCoord2f(0.0f, 0.0f);
+            gl.glVertex2f(gamePausedBounds.x, gamePausedBounds.y + gamePausedBounds.height);
+            gl.glTexCoord2f(1.0f, 0.0f);
+            gl.glVertex2f(gamePausedBounds.x + gamePausedBounds.width, gamePausedBounds.y + gamePausedBounds.height);
+            gl.glTexCoord2f(1.0f, 1.0f);
+            gl.glVertex2f(gamePausedBounds.x + gamePausedBounds.width, gamePausedBounds.y);
+            gl.glTexCoord2f(0.0f, 1.0f);
+            gl.glVertex2f(gamePausedBounds.x, gamePausedBounds.y);
+            gl.glEnd();
+            gamePausedTexture.disable();
         }
         if (continueTexture != null) {
-            continueTexture.enable(); continueTexture.bind();
+            continueTexture.enable();
+            continueTexture.bind();
             gl.glBegin(GL.GL_QUADS);
-            gl.glTexCoord2f(0.0f, 0.0f); gl.glVertex2f(continueBtnBounds.x, continueBtnBounds.y + continueBtnBounds.height);
-            gl.glTexCoord2f(1.0f, 0.0f); gl.glVertex2f(continueBtnBounds.x + continueBtnBounds.width, continueBtnBounds.y + continueBtnBounds.height);
-            gl.glTexCoord2f(1.0f, 1.0f); gl.glVertex2f(continueBtnBounds.x + continueBtnBounds.width, continueBtnBounds.y);
-            gl.glTexCoord2f(0.0f, 1.0f); gl.glVertex2f(continueBtnBounds.x, continueBtnBounds.y);
-            gl.glEnd(); continueTexture.disable();
+            gl.glTexCoord2f(0.0f, 0.0f);
+            gl.glVertex2f(continueBtnBounds.x, continueBtnBounds.y + continueBtnBounds.height);
+            gl.glTexCoord2f(1.0f, 0.0f);
+            gl.glVertex2f(continueBtnBounds.x + continueBtnBounds.width, continueBtnBounds.y + continueBtnBounds.height);
+            gl.glTexCoord2f(1.0f, 1.0f);
+            gl.glVertex2f(continueBtnBounds.x + continueBtnBounds.width, continueBtnBounds.y);
+            gl.glTexCoord2f(0.0f, 1.0f);
+            gl.glVertex2f(continueBtnBounds.x, continueBtnBounds.y);
+            gl.glEnd();
+            continueTexture.disable();
         }
         if (exitTexture != null) {
-            exitTexture.enable(); exitTexture.bind();
+            exitTexture.enable();
+            exitTexture.bind();
             gl.glBegin(GL.GL_QUADS);
-            gl.glTexCoord2f(0.0f, 0.0f); gl.glVertex2f(exitBtnBounds.x, exitBtnBounds.y + exitBtnBounds.height);
-            gl.glTexCoord2f(1.0f, 0.0f); gl.glVertex2f(exitBtnBounds.x + exitBtnBounds.width, exitBtnBounds.y + exitBtnBounds.height);
-            gl.glTexCoord2f(1.0f, 1.0f); gl.glVertex2f(exitBtnBounds.x + exitBtnBounds.width, exitBtnBounds.y);
-            gl.glTexCoord2f(0.0f, 1.0f); gl.glVertex2f(exitBtnBounds.x, exitBtnBounds.y);
-            gl.glEnd(); exitTexture.disable();
+            gl.glTexCoord2f(0.0f, 0.0f);
+            gl.glVertex2f(exitBtnBounds.x, exitBtnBounds.y + exitBtnBounds.height);
+            gl.glTexCoord2f(1.0f, 0.0f);
+            gl.glVertex2f(exitBtnBounds.x + exitBtnBounds.width, exitBtnBounds.y + exitBtnBounds.height);
+            gl.glTexCoord2f(1.0f, 1.0f);
+            gl.glVertex2f(exitBtnBounds.x + exitBtnBounds.width, exitBtnBounds.y);
+            gl.glTexCoord2f(0.0f, 1.0f);
+            gl.glVertex2f(exitBtnBounds.x, exitBtnBounds.y);
+            gl.glEnd();
+            exitTexture.disable();
         }
         drawMuteButton(gl);
         gl.glDisable(GL.GL_BLEND);
@@ -1070,24 +1302,38 @@ public class GameGlListener implements GLEventListener, KeyListener, MouseListen
     private void renderEndScreen(GL gl, int width, int height) {
         Texture currentTex = isWin ? winTexture : loseTexture;
         if (currentTex != null) {
-            gl.glMatrixMode(GL.GL_PROJECTION); gl.glPushMatrix(); gl.glLoadIdentity();
+            gl.glMatrixMode(GL.GL_PROJECTION);
+            gl.glPushMatrix();
+            gl.glLoadIdentity();
             gl.glOrtho(0, 1, 0, 1, -1, 1);
-            gl.glMatrixMode(GL.GL_MODELVIEW); gl.glPushMatrix(); gl.glLoadIdentity();
-            gl.glDisable(GL.GL_DEPTH_TEST); gl.glEnable(GL.GL_BLEND);
+            gl.glMatrixMode(GL.GL_MODELVIEW);
+            gl.glPushMatrix();
+            gl.glLoadIdentity();
+            gl.glDisable(GL.GL_DEPTH_TEST);
+            gl.glEnable(GL.GL_BLEND);
             gl.glBlendFunc(GL.GL_SRC_ALPHA, GL.GL_ONE_MINUS_SRC_ALPHA);
             gl.glColor3f(1, 1, 1);
-            currentTex.enable(); currentTex.bind();
+            currentTex.enable();
+            currentTex.bind();
             gl.glScaled(0.5, 0.5, 1);
             gl.glTranslatef(0.5f, 0.75f, 0);
             gl.glBegin(GL.GL_QUADS);
-            gl.glTexCoord2f(0.0f, 0.0f); gl.glVertex2f(0.0f, 1.0f);
-            gl.glTexCoord2f(1.0f, 0.0f); gl.glVertex2f(1.0f, 1.0f);
-            gl.glTexCoord2f(1.0f, 1.0f); gl.glVertex2f(1.0f, 0.0f);
-            gl.glTexCoord2f(0.0f, 1.0f); gl.glVertex2f(0.0f, 0.0f);
+            gl.glTexCoord2f(0.0f, 0.0f);
+            gl.glVertex2f(0.0f, 1.0f);
+            gl.glTexCoord2f(1.0f, 0.0f);
+            gl.glVertex2f(1.0f, 1.0f);
+            gl.glTexCoord2f(1.0f, 1.0f);
+            gl.glVertex2f(1.0f, 0.0f);
+            gl.glTexCoord2f(0.0f, 1.0f);
+            gl.glVertex2f(0.0f, 0.0f);
             gl.glEnd();
-            currentTex.disable(); gl.glDisable(GL.GL_BLEND);
-            gl.glPopMatrix(); gl.glMatrixMode(GL.GL_PROJECTION); gl.glPopMatrix();
-            gl.glMatrixMode(GL.GL_MODELVIEW); gl.glEnable(GL.GL_DEPTH_TEST);
+            currentTex.disable();
+            gl.glDisable(GL.GL_BLEND);
+            gl.glPopMatrix();
+            gl.glMatrixMode(GL.GL_PROJECTION);
+            gl.glPopMatrix();
+            gl.glMatrixMode(GL.GL_MODELVIEW);
+            gl.glEnable(GL.GL_DEPTH_TEST);
         } else {
             menuRenderer.beginRendering(width, height);
             menuRenderer.setColor(isWin ? Color.GREEN : Color.RED);
@@ -1099,12 +1345,20 @@ public class GameGlListener implements GLEventListener, KeyListener, MouseListen
         menuRenderer.setColor(Color.RED);
         menuRenderer.draw("Score: " + score, (width / 2) - 80, (height / 2) - 50);
         menuRenderer.setColor(Color.YELLOW);
-        gl.glMatrixMode(GL.GL_MODELVIEW); gl.glPushMatrix(); gl.glLoadIdentity();
-        float btnSize = 0.2f; float startX = 0.27f; float posY = 0.25f; float spacing = 0.12f;
-        gl.glMatrixMode(GL.GL_PROJECTION); gl.glPushMatrix(); gl.glLoadIdentity();
+        gl.glMatrixMode(GL.GL_MODELVIEW);
+        gl.glPushMatrix();
+        gl.glLoadIdentity();
+        float btnSize = 0.2f;
+        float startX = 0.27f;
+        float posY = 0.25f;
+        float spacing = 0.12f;
+        gl.glMatrixMode(GL.GL_PROJECTION);
+        gl.glPushMatrix();
+        gl.glLoadIdentity();
         gl.glOrtho(0, 1, 0, 1, -1, 1);
         gl.glMatrixMode(GL.GL_MODELVIEW);
-        gl.glDisable(GL.GL_DEPTH_TEST); gl.glEnable(GL.GL_BLEND);
+        gl.glDisable(GL.GL_DEPTH_TEST);
+        gl.glEnable(GL.GL_BLEND);
         gl.glBlendFunc(GL.GL_SRC_ALPHA, GL.GL_ONE_MINUS_SRC_ALPHA);
         Texture[] buttons = {Enter, To, Exit};
         for (int i = 0; i < buttons.length; i++) {
@@ -1112,38 +1366,57 @@ public class GameGlListener implements GLEventListener, KeyListener, MouseListen
             if (btnTex == null) continue;
             float currentX = startX + (i * spacing);
             gl.glColor3f(1, 1, 1);
-            btnTex.enable(); btnTex.bind();
+            btnTex.enable();
+            btnTex.bind();
             TextureCoords coords = btnTex.getImageTexCoords();
             gl.glBegin(GL.GL_QUADS);
-            gl.glTexCoord2f(coords.left(), coords.bottom()); gl.glVertex2f(currentX, posY);
-            gl.glTexCoord2f(coords.right(), coords.bottom()); gl.glVertex2f(currentX + btnSize, posY);
-            gl.glTexCoord2f(coords.right(), coords.top()); gl.glVertex2f(currentX + btnSize, posY + btnSize);
-            gl.glTexCoord2f(coords.left(), coords.top()); gl.glVertex2f(currentX, posY + btnSize);
+            gl.glTexCoord2f(coords.left(), coords.bottom());
+            gl.glVertex2f(currentX, posY);
+            gl.glTexCoord2f(coords.right(), coords.bottom());
+            gl.glVertex2f(currentX + btnSize, posY);
+            gl.glTexCoord2f(coords.right(), coords.top());
+            gl.glVertex2f(currentX + btnSize, posY + btnSize);
+            gl.glTexCoord2f(coords.left(), coords.top());
+            gl.glVertex2f(currentX, posY + btnSize);
             gl.glEnd();
             btnTex.disable();
         }
         gl.glDisable(GL.GL_BLEND);
-        gl.glPopMatrix(); gl.glMatrixMode(GL.GL_PROJECTION); gl.glPopMatrix(); gl.glMatrixMode(GL.GL_MODELVIEW);
-        menuRenderer.endRendering(); ScoreRenderer.endRendering();
+        gl.glPopMatrix();
+        gl.glMatrixMode(GL.GL_PROJECTION);
+        gl.glPopMatrix();
+        gl.glMatrixMode(GL.GL_MODELVIEW);
+        menuRenderer.endRendering();
+        ScoreRenderer.endRendering();
     }
 
     private void checkGameStatus() {
         if (isMultiplayer) {
             if (playerHealth <= 0 && player2Health <= 0) {
-                playerHealth = 0; player2Health = 0; isGameRunning = false; isWin = false;
-                Sound.playSound("Assets/Sounds/Boss.wav");                    System.out.println("aaaaaaaaaaaaaaaaahhhh");
+                playerHealth = 0;
+                player2Health = 0;
+                isGameRunning = false;
+                isWin = false;
+                Sound.playSound("Assets/Sounds/Boss.wav");
+                System.out.println("aaaaaaaaaaaaaaaaahhhh");
 
             }
         } else {
             if (playerHealth <= 0) {
-                playerHealth = 0; isGameRunning = false; isWin = false;
-                Sound.playSound("Assets/Sounds/Boss.wav");                    System.out.println("aaaaaaaaaaaaaaaaahhhh");
+                playerHealth = 0;
+                isGameRunning = false;
+                isWin = false;
+                Sound.playSound("Assets/Sounds/Boss.wav");
+                System.out.println("aaaaaaaaaaaaaaaaahhhh");
 
             }
         }
-        if (timerSeconds <= 0) { isGameRunning = false; isWin = true;
+        if (timerSeconds <= 0) {
+            isGameRunning = false;
+            isWin = true;
             Sound.playSound("Assets/Sounds/Victory.wav");
-            Sound.playSound("Assets/Sounds/Victory1.wav");                    System.out.println("aaaaaaaaaaaaaaaaahhhh");
+            Sound.playSound("Assets/Sounds/Victory1.wav");
+            System.out.println("aaaaaaaaaaaaaaaaahhhh");
         }
     }
 
@@ -1155,14 +1428,19 @@ public class GameGlListener implements GLEventListener, KeyListener, MouseListen
         }
     }
 
-    @Override public void reshape(GLAutoDrawable drawable, int x, int y, int width, int height) {
+    @Override
+    public void reshape(GLAutoDrawable drawable, int x, int y, int width, int height) {
         GL gl = drawable.getGL();
         gl.glViewport(0, 0, width, height);
-        gl.glMatrixMode(GL.GL_PROJECTION); gl.glLoadIdentity();
+        gl.glMatrixMode(GL.GL_PROJECTION);
+        gl.glLoadIdentity();
         gl.glOrtho(0, 100, 0, 100, -1, 1);
         gl.glMatrixMode(GL.GL_MODELVIEW);
     }
-    @Override public void displayChanged(GLAutoDrawable drawable, boolean modeChanged, boolean deviceChanged) {}
+
+    @Override
+    public void displayChanged(GLAutoDrawable drawable, boolean modeChanged, boolean deviceChanged) {
+    }
 
     @Override
     public void keyPressed(KeyEvent e) {
@@ -1179,13 +1457,24 @@ public class GameGlListener implements GLEventListener, KeyListener, MouseListen
         }
 
         if (playerHealth > 0) {
-            if (e.getKeyCode() == KeyEvent.VK_LEFT) { leftPressed = true; facingRight = false; isWalking = true; }
-            else if (e.getKeyCode() == KeyEvent.VK_RIGHT) { rightPressed = true; facingRight = true; isWalking = true; }
-            else if (e.getKeyCode() == KeyEvent.VK_UP) {
-                if (!isJumping) { isJumping = true; verticalVelocity = jumpStrength; currentFrameIndex = 0; }
-            }
-            else if (e.getKeyCode() == KeyEvent.VK_SPACE) {
-                isShooting = true; shootingStartTime = System.currentTimeMillis(); currentFrameIndex = 0;
+            if (e.getKeyCode() == KeyEvent.VK_LEFT) {
+                leftPressed = true;
+                facingRight = false;
+                isWalking = true;
+            } else if (e.getKeyCode() == KeyEvent.VK_RIGHT) {
+                rightPressed = true;
+                facingRight = true;
+                isWalking = true;
+            } else if (e.getKeyCode() == KeyEvent.VK_UP) {
+                if (!isJumping) {
+                    isJumping = true;
+                    verticalVelocity = jumpStrength;
+                    currentFrameIndex = 0;
+                }
+            } else if (e.getKeyCode() == KeyEvent.VK_SPACE) {
+                isShooting = true;
+                shootingStartTime = System.currentTimeMillis();
+                currentFrameIndex = 0;
                 float bulletStartX = facingRight ? playerX + 8 : playerX - 1;
                 bullets.add(new Bullet(bulletStartX, playerY + 8, facingRight, false));
                 Sound.playSound("Assets/Sounds/Shoot1.wav");
@@ -1194,10 +1483,24 @@ public class GameGlListener implements GLEventListener, KeyListener, MouseListen
         }
 
         if (isMultiplayer && player2Health > 0) {
-            if (e.getKeyCode() == KeyEvent.VK_A) { p2LeftPressed = true; p2FacingRight = false; p2IsWalking = true; }
-            else if (e.getKeyCode() == KeyEvent.VK_D) { p2RightPressed = true; p2FacingRight = true; p2IsWalking = true; }
-            else if (e.getKeyCode() == KeyEvent.VK_F) {
-                p2IsShooting = true; p2ShootingStartTime = System.currentTimeMillis(); p2FrameIndex = 0;
+            if (e.getKeyCode() == KeyEvent.VK_A) {
+                p2LeftPressed = true;
+                p2FacingRight = false;
+                p2IsWalking = true;
+            } else if (e.getKeyCode() == KeyEvent.VK_D) {
+                p2RightPressed = true;
+                p2FacingRight = true;
+                p2IsWalking = true;
+            } else if (e.getKeyCode() == KeyEvent.VK_W) {
+                if (!p2IsJumping) {
+                    p2IsJumping = true;
+                    p2VerticalVelocity = jumpStrength;
+                    p2FrameIndex = 0;
+                }
+            } else if (e.getKeyCode() == KeyEvent.VK_F) {
+                p2IsShooting = true;
+                p2ShootingStartTime = System.currentTimeMillis();
+                p2FrameIndex = 0;
                 float bulletStartX = p2FacingRight ? player2X + 10 : player2X - 5;
                 bullets.add(new Bullet(bulletStartX, player2Y + 8, p2FacingRight, true));
                 Sound.playSound("Assets/Sounds/Shoot3.wav");
@@ -1207,7 +1510,10 @@ public class GameGlListener implements GLEventListener, KeyListener, MouseListen
 
         if (e.getKeyCode() == KeyEvent.VK_P) isPaused = !isPaused;
         else if (e.getKeyCode() == KeyEvent.VK_ESCAPE) {
-            if (isPaused) { myFrame.dispose(); new GameApp(); } else isPaused = true;
+            if (isPaused) {
+                myFrame.dispose();
+                new GameApp();
+            } else isPaused = true;
         }
     }
 
@@ -1224,24 +1530,49 @@ public class GameGlListener implements GLEventListener, KeyListener, MouseListen
         }
     }
 
-    @Override public void mousePressed(MouseEvent e) {
-        double w = glCanvas.getWidth(); double h = glCanvas.getHeight();
-        double mouseX = (e.getX() / w) * 100.0; double mouseY = ((h - e.getY()) / h) * 100.0;
+    @Override
+    public void mousePressed(MouseEvent e) {
+        double w = glCanvas.getWidth();
+        double h = glCanvas.getHeight();
+        double mouseX = (e.getX() / w) * 100.0;
+        double mouseY = ((h - e.getY()) / h) * 100.0;
         if (isPaused) {
             if (mouseX >= muteBtnBounds.x && mouseX <= muteBtnBounds.x + muteBtnBounds.width &&
                     mouseY >= muteBtnBounds.y && mouseY <= muteBtnBounds.y + muteBtnBounds.height) {
-                Sound.toggleMute(); glCanvas.repaint(); return;
+                Sound.toggleMute();
+                glCanvas.repaint();
+                return;
             }
-            if (mouseX >= continueBtnBounds.x && mouseX <= continueBtnBounds.x + continueBtnBounds.width && mouseY >= continueBtnBounds.y && mouseY <= continueBtnBounds.y + continueBtnBounds.height) isPaused = false;
+            if (mouseX >= continueBtnBounds.x && mouseX <= continueBtnBounds.x + continueBtnBounds.width && mouseY >= continueBtnBounds.y && mouseY <= continueBtnBounds.y + continueBtnBounds.height)
+                isPaused = false;
             else if (mouseX >= exitBtnBounds.x && mouseX <= exitBtnBounds.x + exitBtnBounds.width && mouseY >= exitBtnBounds.y && mouseY <= exitBtnBounds.y + exitBtnBounds.height) {
-                myFrame.dispose(); if (animator != null) animator.stop(); new GameApp(); }
+                myFrame.dispose();
+                if (animator != null) animator.stop();
+                new GameApp();
+            }
         } else {
-            if (mouseX >= pauseGameBtnBounds.x && mouseX <= pauseGameBtnBounds.x + pauseGameBtnBounds.width && mouseY >= pauseGameBtnBounds.y && mouseY <= pauseGameBtnBounds.y + pauseGameBtnBounds.height) isPaused = true;
+            if (mouseX >= pauseGameBtnBounds.x && mouseX <= pauseGameBtnBounds.x + pauseGameBtnBounds.width && mouseY >= pauseGameBtnBounds.y && mouseY <= pauseGameBtnBounds.y + pauseGameBtnBounds.height)
+                isPaused = true;
         }
     }
-    @Override public void keyTyped(KeyEvent e) {}
-    @Override public void mouseClicked(MouseEvent e) {}
-    @Override public void mouseReleased(MouseEvent e) {}
-    @Override public void mouseEntered(MouseEvent e) {}
-    @Override public void mouseExited(MouseEvent e) {}
+
+    @Override
+    public void keyTyped(KeyEvent e) {
+    }
+
+    @Override
+    public void mouseClicked(MouseEvent e) {
+    }
+
+    @Override
+    public void mouseReleased(MouseEvent e) {
+    }
+
+    @Override
+    public void mouseEntered(MouseEvent e) {
+    }
+
+    @Override
+    public void mouseExited(MouseEvent e) {
+    }
 }

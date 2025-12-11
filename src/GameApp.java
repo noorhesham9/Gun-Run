@@ -3,12 +3,18 @@ import java.awt.*;
 import java.awt.event.ActionListener;
 import java.io.*;
 import javax.imageio.ImageIO;
+import java.util.Comparator;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 public class GameApp {
     JFrame frame;
     JButton muteButton;
+    public static int playerss;
+    public static String PlayerName1;
+    public static String PlayerName2;
     private static final Dimension MUTE_BUTTON_SIZE = new Dimension(50, 50);
     private static final String MUTE_ON_PATH = "Assets/MuteOn (1).png";
     private static final String MUTE_OFF_PATH = "Assets/MuteOff (1).png";
@@ -310,16 +316,18 @@ public class GameApp {
             String p2 = (nameField2 != null) ? nameField2.getText().trim() : "";
 
             if (players == 1 && !p1.isEmpty()) {
-                saveScore(p1, -1);
+
+                saveScore(p1);
+                PlayerName1 = p1;
                 nameFrame.dispose();
                 showDifficultySelection(1);
-
             } else if (players == 2 && !p1.isEmpty() && !p2.isEmpty()) {
-                saveScore(p1, -1);
-                saveScore(p2, -1);
+                saveScore(p1);
+                saveScore(p2);
+                PlayerName1 = p1;
+                PlayerName2 = p2;
                 nameFrame.dispose();
                 showDifficultySelection(2);
-
             } else {
                 JOptionPane.showMessageDialog(nameFrame, "Please enter all required usernames.", "Error", JOptionPane.ERROR_MESSAGE);
             }
@@ -440,19 +448,19 @@ public class GameApp {
         easyBtn.addActionListener(e -> {
             Sound.playSound("Assets/mixkit-drums-of-war-2784.wav");
             diffFrame.dispose();
-            new GameGlListener("Easy", isMulti);
+            new GameGlListener("Easy", isMulti, PlayerName1, PlayerName2);
         });
 
         mediumBtn.addActionListener(e -> {
             Sound.playSound("Assets/mixkit-drums-of-war-2784.wav");
             diffFrame.dispose();
-            new GameGlListener("Medium", isMulti);
+            new GameGlListener("Medium", isMulti, PlayerName1, PlayerName2);
         });
 
         hardBtn.addActionListener(e -> {
             Sound.playSound("Assets/mixkit-drums-of-war-2784.wav");
             diffFrame.dispose();
-            new GameGlListener("Hard", isMulti);
+            new GameGlListener("Hard", isMulti, PlayerName1, PlayerName1);
         });
 
         backBtn.addActionListener(e -> {
@@ -542,14 +550,14 @@ public class GameApp {
         return btn;
     }
 
-    void saveScore(String playerName, int newScore) {
+    public static void saveScore(String playerName) {
         Map<String, Integer> scores = loadScores();
 
         if (scores.containsKey(playerName)) {
             int currentScore = scores.get(playerName);
-            if (newScore > currentScore) scores.put(playerName, newScore);
+            if (-1 > currentScore) scores.put(playerName, -1);
         } else {
-            scores.put(playerName, newScore);
+            scores.put(playerName, -1);
         }
         try (BufferedWriter writer = new BufferedWriter(new FileWriter("scores.txt"))) {
             for (Map.Entry<String, Integer> entry : scores.entrySet()) {
@@ -561,21 +569,67 @@ public class GameApp {
         }
     }
 
-    Map<String, Integer> loadScores() {
-        Map<String, Integer> scores = new HashMap<>();
-        int cnt = 0;
+    public static void updateScore(String name, int score) {
+        try {
+            java.nio.file.Path path = java.nio.file.Paths.get("scores.txt");
+            if (!java.nio.file.Files.exists(path)) {
+                java.nio.file.Files.createFile(path);
+            }
+
+            java.util.List<String> lines = java.nio.file.Files.readAllLines(path);
+            boolean found = false;
+
+            for (int i = lines.size() - 1; i >= 0; i--) {
+                String line = lines.get(i);
+                if (line.startsWith(name) && line.contains("-1")) {
+                    lines.set(i, name + ":" + score);
+                    found = true;
+                    break;
+                }
+            }
+
+            if (!found) {
+                lines.add(name + ":" + score);
+            }
+
+            java.nio.file.Files.write(path, lines);
+        } catch (java.io.IOException e) {
+            System.err.println(e.getMessage());
+        }
+    }
+
+    public static Map<String, Integer> loadScores() {
+        Map<String, Integer> allScores = new HashMap<>();
         File file = new File("scores.txt");
-        if (!file.exists()) return scores;
+        if (!file.exists()) return allScores;
+
         try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
             String line;
-            while ((line = reader.readLine()) != null && cnt != 10) {
+            while ((line = reader.readLine()) != null) {
+                line = line.trim();
+                if (line.isEmpty()) continue;
+
                 String[] parts = line.split(":");
-                if (parts.length == 2) scores.put(parts[0], Integer.parseInt(parts[1]));
-                cnt++;
+                if (parts.length == 2) {
+                    try {
+                        String name = parts[0].trim();
+                        int score = Integer.parseInt(parts[1].trim());
+                        allScores.merge(name, score, Integer::max);
+                    } catch (NumberFormatException e) {
+                        System.err.println("Skipping invalid score line: " + line);
+                    }
+                }
             }
         } catch (IOException e) {
-            System.out.println(e.getMessage());
+            System.err.println("Error reading scores file: " + e.getMessage());
         }
-        return scores;
+        return allScores.entrySet().stream()
+                .sorted(Map.Entry.comparingByValue(Comparator.reverseOrder()))
+                .limit(10)
+                .collect(Collectors.toMap(
+                        Map.Entry::getKey,
+                        Map.Entry::getValue,
+                        (e1, e2) -> e1,
+                        LinkedHashMap::new));
     }
 }
