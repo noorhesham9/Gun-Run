@@ -162,6 +162,7 @@ public class GameGlListener implements GLEventListener, KeyListener, MouseListen
     Texture Enter;
     Texture To;
     Texture Exit;
+    Texture Restart;
     Texture bulletTexture;
     Texture muteOnTexture;
     Texture muteOffTexture;
@@ -305,9 +306,16 @@ public class GameGlListener implements GLEventListener, KeyListener, MouseListen
             exitTexture = TextureIO.newTexture(new File("Assets/exitboard (1).png"), true);
             winTexture = TextureIO.newTexture(new File("Assets/youwin.png"), true);
             loseTexture = TextureIO.newTexture(new File("Assets/youlose.png"), true);
-            Enter = TextureIO.newTexture(new File("Assets/word enter.png"), true);
             To = TextureIO.newTexture(new File("Assets/word to.png"), true);
             Exit = TextureIO.newTexture(new File("Assets/exit.png"), true);
+
+            File restartFile = new File("Assets/button/Restart (1).png");
+            if (restartFile.exists()) {
+                Restart = TextureIO.newTexture(restartFile, true);
+            } else {
+                System.err.println("Restart button asset not found!");
+            }
+
             muteOnTexture = TextureIO.newTexture(new File("Assets/MuteOff (1).png"), true);
             muteOffTexture = TextureIO.newTexture(new File("Assets/MuteOn (1).png"), true);
 
@@ -1428,9 +1436,10 @@ public class GameGlListener implements GLEventListener, KeyListener, MouseListen
         gl.glPushMatrix();
         gl.glLoadIdentity();
         float btnSize = 0.2f;
-        float startX = 0.27f;
-        float posY = 0.25f;
-        float spacing = 0.12f;
+        float startX = 0.20f;
+        float posY = 0.40f;
+        float spacing = 0.22f;
+
         gl.glMatrixMode(GL.GL_PROJECTION);
         gl.glPushMatrix();
         gl.glLoadIdentity();
@@ -1439,7 +1448,7 @@ public class GameGlListener implements GLEventListener, KeyListener, MouseListen
         gl.glDisable(GL.GL_DEPTH_TEST);
         gl.glEnable(GL.GL_BLEND);
         gl.glBlendFunc(GL.GL_SRC_ALPHA, GL.GL_ONE_MINUS_SRC_ALPHA);
-        Texture[] buttons = {Enter, To, Exit};
+        Texture[] buttons = {Restart, Enter, Exit};
         for (int i = 0; i < buttons.length; i++) {
             Texture btnTex = buttons[i];
             if (btnTex == null) continue;
@@ -1629,6 +1638,38 @@ public class GameGlListener implements GLEventListener, KeyListener, MouseListen
         } else {
             if (mouseX >= pauseGameBtnBounds.x && mouseX <= pauseGameBtnBounds.x + pauseGameBtnBounds.width && mouseY >= pauseGameBtnBounds.y && mouseY <= pauseGameBtnBounds.y + pauseGameBtnBounds.height)
                 isPaused = true;
+        }
+
+        if (!isGameRunning) {
+            float btnSize = 0.2f;
+            float startX = 0.20f;
+            float posY = 0.40f;
+            float spacing = 0.22f;
+            float button_bottom = posY * 100;
+            float button_top = (posY + btnSize) * 100;
+            float restartX_left = startX * 100;
+            float restartX_right = (startX + btnSize) * 100;
+
+            if (mouseX >= restartX_left && mouseX <= restartX_right &&
+                    mouseY >= button_bottom && mouseY <= button_top) {
+                myFrame.dispose();
+                Sound.stop();
+                new GameGlListener(this.difficultyLevel, this.isMultiplayer, player1Name, player2Name);
+                return;
+            }
+
+
+            float exitX_left = (startX + 2 * spacing) * 100;
+            float exitX_right = (startX + 2 * spacing + btnSize) * 100;
+
+            if (mouseX >= exitX_left && mouseX <= exitX_right &&
+                    mouseY >= button_bottom && mouseY <= button_top) {
+
+                myFrame.dispose();
+                if (animator != null) animator.stop();
+                new GameApp();
+                return;
+            }
         }
     }
 
