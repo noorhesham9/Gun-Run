@@ -189,7 +189,7 @@ public class GameGlListener implements GLEventListener, KeyListener, MouseListen
     boolean leftPressed = false;
     boolean rightPressed = false;
     boolean isWalking = false;
-    boolean isJumping = false;
+     boolean isJumping = false;
     float verticalVelocity = 0;
     float gravity = 0.15f;
     float jumpStrength = 3.2f;
@@ -463,11 +463,6 @@ public class GameGlListener implements GLEventListener, KeyListener, MouseListen
 
     private void updateHelicopter(GL gl) {
         if (helicopter.active) {
-//           Sound c=null;
-//
-//
-//           c.playSound("Assets/Sounds/helicopter-so_e2I.wav");
-
             Sound.stop();
 
             if (helicopter.isDropping) {
