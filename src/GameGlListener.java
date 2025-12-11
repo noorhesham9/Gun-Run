@@ -37,7 +37,7 @@ public class GameGlListener implements GLEventListener, KeyListener, MouseListen
         boolean facingRight;
         boolean active;
         long lastShotTime;
-        float width = 10, height = 15;
+        float width = 10, height = 10;
         int state;
         long deathStartTime;
         final float ATTACK_RANGE = 45.0f;
@@ -463,16 +463,27 @@ public class GameGlListener implements GLEventListener, KeyListener, MouseListen
 
     private void updateHelicopter(GL gl) {
         if (helicopter.active) {
+//           Sound c=null;
+//
+//
+//           c.playSound("Assets/Sounds/helicopter-so_e2I.wav");
+
+            Sound.stop();
+
             if (helicopter.isDropping) {
                 if (helicopter.y > helicopter.DROP_Y) {
+                    Sound.playSound("Assets/Sounds/mixkit-arcade-game-explosion-2759.wav");
                     helicopter.y -= helicopter.speed;
                 } else {
                     if (helicopter.y <= helicopter.DROP_Y && helicopter.y > helicopter.DROP_Y - 1.0f) {
                         helicopterBombs.add(new Bomb(helicopter.x + (helicopter.HELI_HEIGHT / 2), helicopter.y));
                         helicopter.y -= 2.0f;
+
                     }
                     helicopter.isDropping = false;
                 }
+
+
             } else {
                 helicopter.y += helicopter.speed * 2.0;
                 if (helicopter.y > 115) {
@@ -488,6 +499,8 @@ public class GameGlListener implements GLEventListener, KeyListener, MouseListen
                 bomb.y -= bomb.speed;
                 if (bomb.y < groundLevel) {
                     bomb.y = groundLevel;
+                    Sound.playSound("Assets/Sounds/Explosion.wav");
+
                     bomb.active = false;
                     spawnExplosion(bomb.x, groundLevel);
                 }
@@ -512,6 +525,7 @@ public class GameGlListener implements GLEventListener, KeyListener, MouseListen
         gl.glEnd();
         helicopterTexture.disable();
         gl.glDisable(GL.GL_BLEND);
+
     }
 
     private void drawBombs(GL gl) {
@@ -520,6 +534,7 @@ public class GameGlListener implements GLEventListener, KeyListener, MouseListen
         gl.glBlendFunc(GL.GL_SRC_ALPHA, GL.GL_ONE_MINUS_SRC_ALPHA);
         bombTexture.enable();
         bombTexture.bind();
+
         gl.glColor3f(1, 1, 1);
         for (Bomb b : helicopterBombs) {
             if (!b.active) continue;
@@ -546,6 +561,7 @@ public class GameGlListener implements GLEventListener, KeyListener, MouseListen
         gl.glColor3f(1, 1, 1);
         for (Explosion exp : explosions) {
             if (exp.active) {
+
                 gl.glBegin(GL.GL_QUADS);
                 gl.glTexCoord2f(0.0f, 0.0f); gl.glVertex2f(exp.x, exp.y + exp.height);
                 gl.glTexCoord2f(1.0f, 0.0f); gl.glVertex2f(exp.x + exp.width, exp.y + exp.height);
@@ -559,6 +575,7 @@ public class GameGlListener implements GLEventListener, KeyListener, MouseListen
     }
 
     private void spawnHelecopter() {
+
         long currentTime = System.currentTimeMillis();
         if (helicopter.active) return;
         if (difficultyLevel.equals("Easy")) return;
@@ -601,20 +618,27 @@ public class GameGlListener implements GLEventListener, KeyListener, MouseListen
                 float startX = reversedDirection ? e.x + e.width : e.x - 5;
                 float startY = e.y + (e.height / 2.0f);
                 enemyBullets.add(new EnemyBullet(startX, startY, reversedDirection));
+                Sound.playSound("Assets/Sounds/Gettinghit.wav");
                 e.lastShotTime = currentTime;
             }
         }
     }
 
     private void updateEnemyBullets(GL gl) {
+
         for (int i = 0; i < enemyBullets.size(); i++) {
-            EnemyBullet b = enemyBullets.get(i);
+            EnemyBullet b=enemyBullets.get(i);
+
             if (b.active) {
-                if (b.facingRight) b.x += 1.5f;
-                else b.x -= 1.5f;
+
+                if (b.facingRight) {b.x += 1.5f;
+                }
+                else{ b.x -= 1.5f;}
                 if (b.x < -10 || b.x > 110) b.active = false;
             }
         }
+
+
         enemyBullets.removeIf(b -> !b.active);
     }
 
@@ -625,7 +649,8 @@ public class GameGlListener implements GLEventListener, KeyListener, MouseListen
                 if (!e.active || e.state == 2) continue;
                 if (b.x < e.x + e.width && b.x + b.width > e.x && b.y < e.y + e.height && b.y + b.height > e.y) {
                     b.active = false;
-                    e.state = 2;
+                    e.state = 2;        Sound.playSound("Assets/Sounds/Zombie.wav");
+
                     e.deathStartTime = System.currentTimeMillis();
                     score += 10;
                     break;
@@ -636,31 +661,68 @@ public class GameGlListener implements GLEventListener, KeyListener, MouseListen
         for (EnemyBullet eb : enemyBullets) {
             if (!eb.active) continue;
             if (playerHealth > 0 && eb.x < playerX + playerWidth && eb.x + eb.width > playerX && eb.y < playerY + playerHeight && eb.y + eb.height > playerY) {
-                eb.active = false; playerHealth -= 10; score -= 5; if (score < 0) score = 0; continue;
+                eb.active = false;
+                playerHealth -= 10;
+
+
+
+
+                score -= 5;
+                if (score < 0) score = 0;
+                continue;
             }
-            if (isMultiplayer && player2Health > 0 && eb.x < player2X + player2Width && eb.x + eb.width > player2X && eb.y < player2Y + player2Height && eb.y + eb.height > player2Y) {
-                eb.active = false; player2Health -= 10; break;
+
+            if (!isMultiplayer&&playerHealth <= 0) {
+                Sound.playSound("Assets/Sounds/Death.wav");                    System.out.println("aaaaaaaaaaaaaaaaahhhh");
+                System.out.println("aaaaaaaaaaaaaaaaahhhh");
+
             }
+
+
+            if (isMultiplayer && player2Health > 0) {
+                if (eb.x < player2X + player2Width && eb.x + eb.width > player2X && eb.y < player2Y + player2Height && eb.y + eb.height > player2Y) {
+                    eb.active = false;
+                    player2Health -= 10;
+
+                    break;
+                }
+            }
+
+            if (player2Health <= 0) {
+
+                Sound.playSound("Assets/Sounds/Death.wav");
+                System.out.println("Player 2 Died! Sound played once.");
+            }
+
+
+
+
         }
 
         for (Enemy e : enemies) {
             if (e.active && e.state != 2) {
                 if (playerHealth > 0 && e.x < playerX + playerWidth && e.x + e.width > playerX && e.y < playerY + playerHeight && e.y + e.height > playerY) {
-                    e.active = false; spawnExplosion(playerX + playerWidth / 2, playerY); playerHealth -= 30; score -= 20; if (score < 0) score = 0;
+                    e.active = false;        Sound.playSound("Assets/Sounds/Explosion.wav");
+                    spawnExplosion(playerX + playerWidth / 2, playerY); playerHealth -= 30; score -= 20; if (score < 0) score = 0;
                 }
                 if (isMultiplayer && player2Health > 0 && e.x < player2X + player2Width && e.x + e.width > player2X && e.y < player2Y + player2Height && e.y + e.height > player2Y) {
-                    e.active = false; spawnExplosion(player2X + player2Width / 2, player2Y); player2Health -= 30;
+                    e.active = false;         Sound.playSound("Assets/Sounds/Explosion.wav");
+                    spawnExplosion(player2X + player2Width / 2, player2Y); player2Health -= 30;
                 }
             }
         }
 
         for (Bomb bomb : helicopterBombs) {
             if (bomb.active) {
+
                 if (playerHealth > 0 && bomb.x < playerX + playerWidth && bomb.x + bomb.width > playerX && bomb.y < playerY + playerHeight && bomb.y + bomb.height > playerY) {
-                    bomb.active = false; spawnExplosion(bomb.x, bomb.y); playerHealth -= 30; score -= 10; if (score < 0) score = 0;
+                    bomb.active = false;
+                    Sound.playSound("Assets/Sounds/Explosion.wav");
+                    spawnExplosion(bomb.x, bomb.y); playerHealth -= 30; score -= 10; if (score < 0) score = 0;
                 }
                 if (isMultiplayer && player2Health > 0 && bomb.x < player2X + player2Width && bomb.x + bomb.width > player2X && bomb.y < player2Y + player2Height && bomb.y + bomb.height > player2Y) {
-                    bomb.active = false; spawnExplosion(bomb.x, bomb.y); player2Health -= 30;
+                    bomb.active = false;         Sound.playSound("Assets/Sounds/Explosion.wav");
+                    spawnExplosion(bomb.x, bomb.y); player2Health -= 30;
                 }
             }
         }
@@ -681,6 +743,7 @@ public class GameGlListener implements GLEventListener, KeyListener, MouseListen
             if (e.state == 2) {
                 tex = (e.type == 0) ? enemy_zombi[1] : enemy1_Scintest[1];
                 if (System.currentTimeMillis() - e.deathStartTime > 500) e.active = false;
+
             } else {
                 tex = (e.type == 0) ? enemy_zombi[0] : enemy1_Scintest[0];
             }
@@ -915,6 +978,7 @@ public class GameGlListener implements GLEventListener, KeyListener, MouseListen
     private void drawHealthBar(GL gl) {
         if (healthImages != null) {
             int index;
+
             if (playerHealth >= 80) index = 4; else if (playerHealth >= 60) index = 3;
             else if (playerHealth >= 40) index = 2; else if (playerHealth >= 20) index = 1; else index = 0;
             if (healthImages[index] != null) {
@@ -1067,13 +1131,20 @@ public class GameGlListener implements GLEventListener, KeyListener, MouseListen
         if (isMultiplayer) {
             if (playerHealth <= 0 && player2Health <= 0) {
                 playerHealth = 0; player2Health = 0; isGameRunning = false; isWin = false;
+                Sound.playSound("Assets/Sounds/Boss.wav");                    System.out.println("aaaaaaaaaaaaaaaaahhhh");
+
             }
         } else {
             if (playerHealth <= 0) {
                 playerHealth = 0; isGameRunning = false; isWin = false;
+                Sound.playSound("Assets/Sounds/Boss.wav");                    System.out.println("aaaaaaaaaaaaaaaaahhhh");
+
             }
         }
-        if (timerSeconds <= 0) { isGameRunning = false; isWin = true; }
+        if (timerSeconds <= 0) { isGameRunning = false; isWin = true;
+            Sound.playSound("Assets/Sounds/Victory.wav");
+            Sound.playSound("Assets/Sounds/Victory1.wav");                    System.out.println("aaaaaaaaaaaaaaaaahhhh");
+        }
     }
 
     private void updateTimer() {
@@ -1117,6 +1188,8 @@ public class GameGlListener implements GLEventListener, KeyListener, MouseListen
                 isShooting = true; shootingStartTime = System.currentTimeMillis(); currentFrameIndex = 0;
                 float bulletStartX = facingRight ? playerX + 8 : playerX - 1;
                 bullets.add(new Bullet(bulletStartX, playerY + 8, facingRight, false));
+                Sound.playSound("Assets/Sounds/Shoot1.wav");
+
             }
         }
 
@@ -1127,6 +1200,8 @@ public class GameGlListener implements GLEventListener, KeyListener, MouseListen
                 p2IsShooting = true; p2ShootingStartTime = System.currentTimeMillis(); p2FrameIndex = 0;
                 float bulletStartX = p2FacingRight ? player2X + 10 : player2X - 5;
                 bullets.add(new Bullet(bulletStartX, player2Y + 8, p2FacingRight, true));
+                Sound.playSound("Assets/Sounds/Shoot3.wav");
+
             }
         }
 
@@ -1158,7 +1233,8 @@ public class GameGlListener implements GLEventListener, KeyListener, MouseListen
                 Sound.toggleMute(); glCanvas.repaint(); return;
             }
             if (mouseX >= continueBtnBounds.x && mouseX <= continueBtnBounds.x + continueBtnBounds.width && mouseY >= continueBtnBounds.y && mouseY <= continueBtnBounds.y + continueBtnBounds.height) isPaused = false;
-            else if (mouseX >= exitBtnBounds.x && mouseX <= exitBtnBounds.x + exitBtnBounds.width && mouseY >= exitBtnBounds.y && mouseY <= exitBtnBounds.y + exitBtnBounds.height) { myFrame.dispose(); if (animator != null) animator.stop(); new GameApp(); }
+            else if (mouseX >= exitBtnBounds.x && mouseX <= exitBtnBounds.x + exitBtnBounds.width && mouseY >= exitBtnBounds.y && mouseY <= exitBtnBounds.y + exitBtnBounds.height) {
+                myFrame.dispose(); if (animator != null) animator.stop(); new GameApp(); }
         } else {
             if (mouseX >= pauseGameBtnBounds.x && mouseX <= pauseGameBtnBounds.x + pauseGameBtnBounds.width && mouseY >= pauseGameBtnBounds.y && mouseY <= pauseGameBtnBounds.y + pauseGameBtnBounds.height) isPaused = true;
         }
