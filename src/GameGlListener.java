@@ -66,6 +66,7 @@ public class GameGlListener implements GLEventListener, KeyListener, MouseListen
         final float DROP_Y = 80.0f;
         final float HELI_HEIGHT = 15.0f;
         final float TOP_BUFFER = 10.0f;
+        boolean soundPlayed = false;
 
         public void activate(float playerX) {
             this.active = true;
@@ -74,6 +75,8 @@ public class GameGlListener implements GLEventListener, KeyListener, MouseListen
             this.targetX = playerX;
             this.isDropping = true;
             this.lastDropTime = System.currentTimeMillis();
+            this.soundPlayed = false;
+            Sound.stop();
         }
     }
 
@@ -122,7 +125,7 @@ public class GameGlListener implements GLEventListener, KeyListener, MouseListen
     }
 
     float backgroundScrollX = 0.0f;
-    final float PARALLAX_SPEED = 0.1f;
+    final float PARALLAX_SPEED = 0.02f;
     Helicopter helicopter = new Helicopter();
     long lastHeliSpawnTime = 0;
     ArrayList<Bomb> helicopterBombs = new ArrayList<>();
@@ -254,11 +257,11 @@ public class GameGlListener implements GLEventListener, KeyListener, MouseListen
             spawnInterval = 3000;
             this.helicopterCooldown = 0;
         } else if (difficulty.equals("Medium")) {
-            timerSeconds = 45;
+            timerSeconds = 40;
             spawnInterval = 1800;
             this.helicopterCooldown = 7000;
         } else if (difficulty.equals("Hard")) {
-            timerSeconds = 80;
+            timerSeconds = 50;
             spawnInterval = 800;
             this.helicopterCooldown = 3500;
         }
@@ -271,7 +274,7 @@ public class GameGlListener implements GLEventListener, KeyListener, MouseListen
         myFrame = new JFrame("Metal Slug - Game Mode (" + difficulty + ")");
         myFrame.setLayout(new BorderLayout());
         myFrame.add(glCanvas, BorderLayout.CENTER);
-        myFrame.setSize(800, 600);
+        myFrame.setSize(900, 700);
         myFrame.setLocationRelativeTo(null);
         myFrame.setResizable(false);
         myFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -294,7 +297,7 @@ public class GameGlListener implements GLEventListener, KeyListener, MouseListen
         gl.glBlendFunc(GL.GL_SRC_ALPHA, GL.GL_ONE_MINUS_SRC_ALPHA);
 
         try {
-            backgroundTexture = TextureIO.newTexture(new File("Assets/Map1.png"), true);
+            backgroundTexture = TextureIO.newTexture(new File("Assets/Background.png"), true);
             backgroundTexture.setTexParameteri(GL.GL_TEXTURE_WRAP_S, GL.GL_REPEAT);
             backgroundTexture.setTexParameteri(GL.GL_TEXTURE_WRAP_T, GL.GL_REPEAT);
 
@@ -446,12 +449,10 @@ public class GameGlListener implements GLEventListener, KeyListener, MouseListen
                 if (leftPressed) {
                     playerX -= playerSpeed;
                     facingRight = false;
-                    backgroundScrollX -= PARALLAX_SPEED;
                 }
                 if (rightPressed) {
                     playerX += playerSpeed;
                     facingRight = true;
-                    backgroundScrollX += PARALLAX_SPEED;
                 }
                 if (isJumping) {
                     playerY += verticalVelocity;
@@ -519,27 +520,26 @@ public class GameGlListener implements GLEventListener, KeyListener, MouseListen
 
     private void updateHelicopter(GL gl) {
         if (helicopter.active) {
-
             if (helicopter.isDropping) {
-
                 if (helicopter.y > helicopter.DROP_Y) {
-                    System.out.println("downnn");
-                    Sound.playLoopSound("Assets/Sounds/helicopter-sound.wav");
+                    if (!helicopter.soundPlayed) {
+                        Sound.playSound("Assets/helicopter-sound-effect.wav");
+                        helicopter.soundPlayed = true;
+                    }
                     helicopter.y -= helicopter.speed;
                 } else {
                     if (helicopter.y <= helicopter.DROP_Y && helicopter.y > helicopter.DROP_Y - 1.0f) {
                         helicopterBombs.add(new Bomb(helicopter.x + (helicopter.HELI_HEIGHT / 2), helicopter.y));
                         helicopter.y -= 2.0f;
+
                     }
                     helicopter.isDropping = false;
                 }
 
+
             } else {
-                // مرحلة الصعود
                 helicopter.y += helicopter.speed * 2.0;
                 if (helicopter.y > 115) {
-
-                    Sound.stopHelicopterSound();
                     helicopter.active = false;
                 }
             }
@@ -1137,13 +1137,13 @@ public class GameGlListener implements GLEventListener, KeyListener, MouseListen
         float sliceWidth = 0.08f;
 
         gl.glBegin(GL.GL_QUADS);
-        gl.glTexCoord2f(texOffset, 0.0f);
+        gl.glTexCoord2f(0.0f, 0.0f);
         gl.glVertex2f(0.0f, 100.0f);
-        gl.glTexCoord2f(texOffset + sliceWidth, 0.0f);
+        gl.glTexCoord2f(1.0f, 0.0f);
         gl.glVertex2f(100.0f, 100.0f);
-        gl.glTexCoord2f(texOffset + sliceWidth, 1.0f);
+        gl.glTexCoord2f(1.0f, 1.0f);
         gl.glVertex2f(100.0f, 0.0f);
-        gl.glTexCoord2f(texOffset, 1.0f);
+        gl.glTexCoord2f(0.0f, 1.0f);
         gl.glVertex2f(0.0f, 0.0f);
         gl.glEnd();
 
@@ -1248,10 +1248,11 @@ public class GameGlListener implements GLEventListener, KeyListener, MouseListen
         if (healthImages != null) {
             int index;
 
-            if (playerHealth >= 80) index = 4;
-            else if (playerHealth >= 60) index = 3;
-            else if (playerHealth >= 40) index = 2;
-            else if (playerHealth >= 20) index = 1;
+            if (playerHealth >= 80) index = 5;
+            else if (playerHealth >= 60) index = 4;
+            else if (playerHealth >= 40) index = 3;
+            else if (playerHealth >= 20) index = 2;
+            else if (playerHealth >= 10) index = 1;
             else index = 0;
             if (healthImages[index] != null) {
                 float x = 2;
@@ -1658,7 +1659,6 @@ public class GameGlListener implements GLEventListener, KeyListener, MouseListen
                 new GameGlListener(this.difficultyLevel, this.isMultiplayer, player1Name, player2Name);
                 return;
             }
-
 
             float exitX_left = (startX + 2 * spacing) * 100;
             float exitX_right = (startX + 2 * spacing + btnSize) * 100;

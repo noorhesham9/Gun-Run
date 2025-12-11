@@ -27,7 +27,7 @@ public class GameApp {
 
     public GameApp() {
         frame = new JFrame("Gun Run - Main Menu");
-        frame.setSize(800, 600);
+        frame.setSize(900, 700);;
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setLocationRelativeTo(null);
         muteButton = createMuteButton();
@@ -203,7 +203,7 @@ public class GameApp {
 
     void showPlayerMode() {
         JFrame frame = new JFrame("Gun Run - Select Player Mode");
-        frame.setSize(800, 600);
+        frame.setSize(900, 700);;
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setLocationRelativeTo(null);
 
@@ -249,7 +249,7 @@ public class GameApp {
         centerPanel.add(Box.createVerticalStrut(50));
         centerPanel.add(gameTitle);
         centerPanel.add(Box.createVerticalStrut(50));
-
+        JButton zombieModeBtn = createStyledImageButton("Assets/button/zombie-mode.png", Large_BUTTON_SIZE);
         JButton singlePlayer = createStyledImageButton("Assets/button/single player (1).png", Large_BUTTON_SIZE);
         JButton multiplePlayers = createStyledImageButton("Assets/button/Multi player (1).png", Large_BUTTON_SIZE);
         JButton ZompieMOde = createStyledImageButton("Assets/button/single player (1).png", Large_BUTTON_SIZE);
@@ -268,11 +268,23 @@ public class GameApp {
             showNameInput(2);
         });
 
-        ZompieMOde.addActionListener(e -> {
+
+        zombieModeBtn.addActionListener(e -> {
             Sound.playSound("Assets/mixkit-drums-of-war-2784.wav");
-            frame.dispose();
-//            new ZombieModeListener(diff);
+//            showPlayerMode.dispose();
+
+            new ZombieModeListener("Hard");
+//            Sound.playBackground("Assets/ZombieMode/MusicBackGround2.wav");
+
+
         });
+
+//        ZompieMOde.addActionListener(e -> {
+//            Sound.playSound("Assets/mixkit-drums-of-war-2784.wav");
+//            frame.dispose();
+////            new ZombieModeListener(diff);
+//        });
+
 
         back.addActionListener(e -> {
             Sound.playSound("Assets/mixkit-shotgun-long-pump-1666.wav");
@@ -285,8 +297,13 @@ public class GameApp {
         centerPanel.add(Box.createVerticalStrut(20));
         centerPanel.add(multiplePlayers);
         centerPanel.add(Box.createVerticalStrut(20));
+        centerPanel.add(zombieModeBtn);
+
+        centerPanel.add(Box.createVerticalStrut(20));
         centerPanel.add(back);
-        centerPanel.add(Box.createVerticalGlue());
+//        centerPanel.add(Box.createVerticalGlue());
+//        centerPanel.add(Box.createVerticalStrut(0));
+
 
         menuPanel.add(topPanel, BorderLayout.NORTH);
         menuPanel.add(centerPanel, BorderLayout.CENTER);
@@ -297,7 +314,7 @@ public class GameApp {
 
     void showNameInput(int players) {
         JFrame nameFrame = new JFrame("Gun Run - Enter Names");
-        nameFrame.setSize(800, 600);
+        nameFrame.setSize(900, 700);;
         nameFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         nameFrame.setLocationRelativeTo(null);
 
@@ -427,7 +444,7 @@ public class GameApp {
 
     void showDifficultySelection(int players) {
         JFrame diffFrame = new JFrame("Gun Run - Select Difficulty");
-        diffFrame.setSize(800, 600);
+        diffFrame.setSize(900, 700);;
         diffFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         diffFrame.setLocationRelativeTo(null);
 
@@ -477,7 +494,6 @@ public class GameApp {
         JButton easyBtn = createStyledImageButton("Assets/button/esay (1).png", BUTTON_SIZE);
         JButton mediumBtn = createStyledImageButton("Assets/button/Medium (1).png", BUTTON_SIZE);
         JButton hardBtn = createStyledImageButton("Assets/button/Hard (1).png", BUTTON_SIZE);
-        JButton zombieModeBtn = createStyledImageButton("Assets/button/zombie-mode.png", Large_BUTTON_SIZE);
         JButton backBtn = createStyledImageButton("Assets/button/Back (1).png", BUTTON_SIZE);
 
         boolean isMulti = (players == 2);
@@ -487,13 +503,7 @@ public class GameApp {
             diffFrame.dispose();
             new GameGlListener("Easy", isMulti, PlayerName1, PlayerName2);
         });
-        zombieModeBtn.addActionListener(e -> {
-            Sound.playSound("Assets/mixkit-drums-of-war-2784.wav");
-            diffFrame.dispose();
 
-            new ZombieModeListener("Medium");
-
-        });
 
         mediumBtn.addActionListener(e -> {
             Sound.playSound("Assets/mixkit-drums-of-war-2784.wav");
@@ -521,7 +531,6 @@ public class GameApp {
         centerPanel.add(hardBtn);
 //        centerPanel.add(Box.createVerticalStrut(20));
         // 🆕 إضافة زر وضع الزومبي
-        centerPanel.add(zombieModeBtn);
 //        centerPanel.add(Box.createVerticalStrut(25)); // فراغ بعد زر وضع الزومبي
         centerPanel.add(backBtn);
         centerPanel.add(Box.createVerticalGlue());

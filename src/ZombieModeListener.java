@@ -47,15 +47,15 @@ public class ZombieModeListener implements GLEventListener, KeyListener, MouseLi
             this.state = 0;
 
             if (type == 0) {
+                this.width = 10;
+                this.height = 12;
+            } else if(type==1){
                 this.width = 12;
                 this.height = 15;
-            } else if(type==1){
-                this.width = 15;
-                this.height = 17;
             }
             else if (type == 2) {
-                this.width = 17;
-                this.height = 18;
+                this.width = 10;
+                this.height = 10;
             }
         }
     }
@@ -206,7 +206,7 @@ public class ZombieModeListener implements GLEventListener, KeyListener, MouseLi
             this.planeCooldown = 10000;
         } else if (difficulty.equals("Hard")) {
             timerSeconds = 60;
-            spawnInterval = 1500;
+            spawnInterval = 1000;
             this.planeCooldown = 8000;
         }
 
@@ -219,7 +219,7 @@ public class ZombieModeListener implements GLEventListener, KeyListener, MouseLi
         myFrame = new JFrame("ZOMBIE MODE - " + difficulty);
         myFrame.setLayout(new BorderLayout());
         myFrame.add(glCanvas, BorderLayout.CENTER);
-        myFrame.setSize(1400, 700);
+        myFrame.setSize(900, 700);
         myFrame.setLocationRelativeTo(null);
         myFrame.setResizable(false);
         myFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -319,7 +319,8 @@ public class ZombieModeListener implements GLEventListener, KeyListener, MouseLi
                     System.err.println("Error in music thread: " + e.getMessage());
                 }
             }
-        }).start();
+        }).start();                    Sound.playBackground("Assets/ZombieMode/MusicBackGround2.wav");
+
 
 
         timerRenderer = new TextRenderer(new Font("Stencil", Font.BOLD, 40));
@@ -340,7 +341,7 @@ public class ZombieModeListener implements GLEventListener, KeyListener, MouseLi
             drawHUD(gl, drawable);
             checkGameStatus();
             drawHealthBar(gl);
-            Sound.playBackground("Assets/ZombieMode/MusicBackGround.wav");
+//            Sound.playBackground("Assets/ZombieMode/MusicBackGround2.wav");
 
         } else {
             renderEndScreen(gl, drawable.getWidth(), drawable.getHeight());
@@ -350,6 +351,9 @@ public class ZombieModeListener implements GLEventListener, KeyListener, MouseLi
         } else {
             updateTimer();
         }
+        Sound.stop();
+//        Sound.playBackground("Assets/ZombieMode/MusicBackGround2.wav");
+
     }
 
     private void drawGame(GL gl) {
@@ -809,10 +813,12 @@ public class ZombieModeListener implements GLEventListener, KeyListener, MouseLi
     private void drawHealthBar(GL gl) {
         if (healthImages != null) {
             int index;
-            if (playerHealth >= 80) index = 4;
-            else if (playerHealth >= 60) index = 3;
-            else if (playerHealth >= 40) index = 2;
-            else if (playerHealth >= 20) index = 1;
+            if (playerHealth >= 80) index = 5;
+            else if (playerHealth >= 60) index = 4;
+            else if (playerHealth >= 40) index = 3;
+            else if (playerHealth >= 20) index = 2;
+            else if (playerHealth >= 10) index = 1;
+
             else index = 0;
 
             if (healthImages[index] != null) {
@@ -982,8 +988,8 @@ public class ZombieModeListener implements GLEventListener, KeyListener, MouseLi
             playerHealth = 0;
             isGameRunning = false;
             isWin = false;
-            Sound.stop();
             Sound.playSound("Assets/Sounds/game_over.wav");
+
         }
 
         if (timerSeconds <= 0) {
@@ -1045,7 +1051,7 @@ public class ZombieModeListener implements GLEventListener, KeyListener, MouseLi
                     isJumping = true;
                     verticalVelocity = jumpStrength;
                     currentFrameIndex = 0;
-                    Sound.playSound("Assets/Sounds/Reload.wav");
+//                    Sound.playSound("Assets/Sounds/Reload.wav");
                 }
             }
             else if (e.getKeyCode() == KeyEvent.VK_SPACE) {
