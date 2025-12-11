@@ -8,5 +8,5 @@ seeka:60
 tito:50
 5amees kaka:40
 ahmed:30
-beeka:55
-seeka:55
+meekee:40
+heekee:40

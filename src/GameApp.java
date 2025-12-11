@@ -18,6 +18,8 @@ public class GameApp {
     private static final Dimension MUTE_BUTTON_SIZE = new Dimension(50, 50);
     private static final String MUTE_ON_PATH = "Assets/MuteOn (1).png";
     private static final String MUTE_OFF_PATH = "Assets/MuteOff (1).png";
+    private static final Dimension BUTTON_SIZE = new Dimension(280, 40);
+    private static final Dimension Large_BUTTON_SIZE = new Dimension(380, 70);
 
     public static void main(String[] args) {
         new GameApp();
@@ -64,9 +66,34 @@ public class GameApp {
             }
         } catch (IOException e) {
             button.setText(Sound.isMuted() ? "Unmute" : "Mute");
-            button.setFont(new Font("Arial", Font.BOLD, 12));
+            button.setFont(new Font("Arial Black", Font.BOLD, 12));
             button.setToolTipText("Error loading sound icon");
         }
+    }
+
+    private JButton createStyledImageButton(String path, Dimension size) {
+        JButton btn = new JButton();
+        btn.setPreferredSize(size);
+        btn.setMaximumSize(size);
+        btn.setMinimumSize(size);
+        btn.setAlignmentX(Component.CENTER_ALIGNMENT);
+        btn.setOpaque(false);
+        btn.setContentAreaFilled(false);
+        btn.setBorderPainted(false);
+        btn.setFocusPainted(false);
+
+        try {
+            Image img = ImageIO.read(new File(path));
+            if (img != null) {
+                Image scaledImg = img.getScaledInstance(size.width, size.height, Image.SCALE_SMOOTH);
+                btn.setIcon(new ImageIcon(scaledImg));
+            } else {
+                btn.setText("Error loading: " + path);
+            }
+        } catch (IOException e) {
+            btn.setText("Error reading file: " + path);
+        }
+        return btn;
     }
 
     void mainMenu() {
@@ -108,7 +135,7 @@ public class GameApp {
             gameTitle.setBackground(new Color(0, 0, 0, 0));
         } catch (IOException e) {
             gameTitle.setText("GUN RUN");
-            gameTitle.setFont(new Font("Arial", Font.BOLD, 60));
+            gameTitle.setFont(new Font("Arial Black", Font.BOLD, 60));
             gameTitle.setForeground(Color.YELLOW);
             gameTitle.setOpaque(false);
         }
@@ -118,9 +145,9 @@ public class GameApp {
         centerPanel.add(gameTitle);
         centerPanel.add(Box.createVerticalStrut(50));
 
-        JButton startButton = createStyledButton("Start");
-        JButton scoreBoard = createStyledButton("Scoreboard");
-        JButton instructions = createStyledButton("Instructions");
+        JButton startButton = createStyledImageButton("Assets/button/Start (1).png", BUTTON_SIZE);
+        JButton scoreBoard = createStyledImageButton("Assets/button/Scoreboard (1).png", Large_BUTTON_SIZE);
+        JButton instructions = createStyledImageButton("Assets/button/Instructions (1).png", Large_BUTTON_SIZE);
 
         instructions.addActionListener(e -> {
             JOptionPane.showMessageDialog(frame,
@@ -132,6 +159,7 @@ public class GameApp {
                             "• Shoot: Spacebar\n\n" +
                             "🎮 PLAYER 2 CONTROLS (Multiplayer):\n" +
                             "• Move: 'A' (Left) / 'D' (Right)\n" +
+                            "• Jump: 'W'\n" +
                             "• Shoot: 'F' Key\n\n" +
                             "⚠️ WARNINGS:\n" +
                             "• Watch out for Zombies and Enemy Soldiers!\n" +
@@ -212,7 +240,7 @@ public class GameApp {
             gameTitle.setBackground(new Color(0, 0, 0, 0));
         } catch (IOException e) {
             gameTitle.setText("GUN RUN");
-            gameTitle.setFont(new Font("Arial", Font.BOLD, 60));
+            gameTitle.setFont(new Font("Arial Black", Font.BOLD, 60));
             gameTitle.setForeground(Color.YELLOW);
             gameTitle.setOpaque(false);
         }
@@ -222,9 +250,9 @@ public class GameApp {
         centerPanel.add(gameTitle);
         centerPanel.add(Box.createVerticalStrut(50));
 
-        JButton singlePlayer = createStyledButton("Single Player");
-        JButton multiplePlayers = createStyledButton("Multi Player");
-        JButton back = createStyledButton("Back");
+        JButton singlePlayer = createStyledImageButton("Assets/button/single player (1).png", Large_BUTTON_SIZE);
+        JButton multiplePlayers = createStyledImageButton("Assets/button/Multi player (1).png", Large_BUTTON_SIZE);
+        JButton back = createStyledImageButton("Assets/button/Back (1).png", BUTTON_SIZE);
 
         singlePlayer.addActionListener(e -> {
             Sound.playSound("Assets/mixkit-drums-of-war-2784.wav");
@@ -298,7 +326,7 @@ public class GameApp {
             gameTitle.setBackground(new Color(0, 0, 0, 0));
         } catch (IOException e) {
             gameTitle.setText("GUN RUN");
-            gameTitle.setFont(new Font("Arial", Font.BOLD, 60));
+            gameTitle.setFont(new Font("Arial Black", Font.BOLD, 60));
             gameTitle.setForeground(Color.YELLOW);
             gameTitle.setOpaque(false);
         }
@@ -335,7 +363,7 @@ public class GameApp {
 
         JLabel label1 = new JLabel(players == 1 ? "Username:" : "Player 1 Username:");
         label1.setForeground(Color.RED);
-        label1.setFont(new Font("Arial", Font.BOLD, 16));
+        label1.setFont(new Font("Arial Black", Font.BOLD, 16));
         label1.setAlignmentX(Component.CENTER_ALIGNMENT);
         JTextField nameField1 = new JTextField(20);
         nameField1.setMaximumSize(new Dimension(300, 30));
@@ -351,7 +379,7 @@ public class GameApp {
         if (players == 2) {
             JLabel label2 = new JLabel("Player 2 Username:");
             label2.setForeground(Color.BLUE);
-            label2.setFont(new Font("Arial", Font.BOLD, 16));
+            label2.setFont(new Font("Arial Black", Font.BOLD, 16));
             label2.setAlignmentX(Component.CENTER_ALIGNMENT);
             JTextField nameField2 = new JTextField(20);
             nameField2.setMaximumSize(new Dimension(300, 30));
@@ -365,14 +393,14 @@ public class GameApp {
             centerPanel.add(Box.createVerticalStrut(30));
         }
 
-        JButton nextBtn = createStyledButton("Next");
+        JButton nextBtn = createStyledImageButton("Assets/button/Next (1).png", BUTTON_SIZE);
         nextBtn.addActionListener(nextStepAction);
         nextBtn.setForeground(Color.WHITE);
 
         centerPanel.add(nextBtn);
         centerPanel.add(Box.createVerticalStrut(20));
 
-        JButton backBtn = createStyledButton("Back");
+        JButton backBtn = createStyledImageButton("Assets/button/Back (1).png", BUTTON_SIZE);
         backBtn.addActionListener(e -> {
             Sound.playSound("Assets/mixkit-shotgun-long-pump-1666.wav");
             nameFrame.dispose();
@@ -428,7 +456,7 @@ public class GameApp {
             gameTitle.setBackground(new Color(0, 0, 0, 0));
         } catch (IOException e) {
             gameTitle.setText("GUN RUN");
-            gameTitle.setFont(new Font("Arial", Font.BOLD, 60));
+            gameTitle.setFont(new Font("Arial Black", Font.BOLD, 60));
             gameTitle.setForeground(Color.YELLOW);
             gameTitle.setOpaque(false);
         }
@@ -438,10 +466,10 @@ public class GameApp {
         centerPanel.add(gameTitle);
         centerPanel.add(Box.createVerticalStrut(50));
 
-        JButton easyBtn = createStyledButton("Easy");
-        JButton mediumBtn = createStyledButton("Medium");
-        JButton hardBtn = createStyledButton("Hard");
-        JButton backBtn = createStyledButton("Back");
+        JButton easyBtn = createStyledImageButton("Assets/button/esay (1).png", BUTTON_SIZE);
+        JButton mediumBtn = createStyledImageButton("Assets/button/Medium (1).png", BUTTON_SIZE);
+        JButton hardBtn = createStyledImageButton("Assets/button/Hard (1).png", BUTTON_SIZE);
+        JButton backBtn = createStyledImageButton("Assets/button/Back (1).png", BUTTON_SIZE);
 
         boolean isMulti = (players == 2);
 
@@ -499,7 +527,7 @@ public class GameApp {
         centerPanel.setBackground(Color.BLACK);
 
         JLabel title = new JLabel("High Scores");
-        title.setFont(new Font("Arial", Font.BOLD, 30));
+        title.setFont(new Font("Arial Black", Font.BOLD, 30));
         title.setForeground(Color.WHITE);
         title.setAlignmentX(Component.CENTER_ALIGNMENT);
         centerPanel.add(Box.createVerticalStrut(20));
@@ -520,7 +548,7 @@ public class GameApp {
                     centerPanel.add(Box.createVerticalStrut(10));
                 });
 
-        JButton btnBack = createStyledButton("Back");
+        JButton btnBack = createStyledImageButton("Assets/button/Back (1).png", BUTTON_SIZE);
         btnBack.addActionListener(e -> {
             Sound.playSound("Assets/mixkit-shotgun-long-pump-1666.wav");
             Sound.stop();
