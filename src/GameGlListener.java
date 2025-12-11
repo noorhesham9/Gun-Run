@@ -1,4 +1,5 @@
 import javax.media.opengl.*;
+
 import com.sun.opengl.util.FPSAnimator;
 import com.sun.opengl.util.j2d.TextRenderer;
 import com.sun.opengl.util.texture.Texture;
@@ -51,6 +52,31 @@ public class GameGlListener implements GLEventListener, KeyListener, MouseListen
         }
     }
 
+    class Helicopter {
+        float x;
+        float y = 110.0f;// تبدأ من خارج الشاشة (أعلى)
+        float speed = 0.4f; // سرعة نزول معتدلة
+        boolean active = false;
+        float targetX; // موقع اللاعب X المستهدف
+        boolean isDropping = false; // حالة النزول للقصف
+        long lastDropTime = 0;
+        final long COOLDOWN = 20000; // 20 ثانية لتوليد جديد (حسب الطلب)
+        final float DROP_Y = 80.0f; // الارتفاع الذي تتوقف عنده للقصف
+        final float HELI_HEIGHT = 15.0f; // افترض أن ارتفاع رسم الهليكوبتر هو 15 وحدة
+        final float TOP_BUFFER = 10.0f; // المساحة المطلوبة فوق الهليكوبتر
+
+
+        // عند استدعاء هذه الدالة، تبدأ الهليكوبتر بالنزول
+        public void activate(float playerX) {
+            this.active = true;
+            this.x = playerX;
+            this.y = 110.0f;
+            this.targetX = playerX;
+            this.isDropping = true;
+            this.lastDropTime = System.currentTimeMillis();
+        }
+    }
+
     class EnemyBullet {
         float x, y;
         boolean facingRight;
@@ -65,7 +91,54 @@ public class GameGlListener implements GLEventListener, KeyListener, MouseListen
         }
     }
 
+    // 🆕 كلاس القنبلة الجديدة
+    class Bomb {
+        float x, y;
+        boolean active;
+        float width = 5, height = 5;
+        float speed = 0.5f;
 
+        public Bomb(float x, float y) {
+            this.x = x;
+            this.y = y;
+            this.active = true;
+        }
+    }
+
+    // 🆕 كلاس الانفجار
+    class Explosion {
+        float x, y;
+        boolean active;
+        long startTime;
+        final long DURATION = 300; // 300ms مدة عرض الانفجار
+        float width = 20, height = 20; // حجم أكبر للانفجار
+
+        public Explosion(float x, float y) {
+            this.x = x - (width / 2); // توسيط الانفجار حول النقطة
+            this.y = y;
+            this.active = true;
+            this.startTime = System.currentTimeMillis();
+        }
+    }
+
+    // 🆕 متغيرات الخلفية المتحركة
+    float backgroundScrollX = 0.0f;
+    final float PARALLAX_SPEED = 0.1f; // سرعة تحريك الخلفية (أقل من سرعة اللاعب)
+
+    // 🆕 متغيرات الهليكوبتر والقنابل
+    Helicopter helicopter = new Helicopter();
+    long lastHeliSpawnTime = 0;
+    ArrayList<Bomb> helicopterBombs = new ArrayList<>();
+    Texture helicopterTexture; // 🆕 تحتاج إلى تكستشر للهليكوبتر
+
+    Texture bombTexture;
+
+    // 🆕 متغيرات الانفجارات
+    ArrayList<Explosion> explosions = new ArrayList<>();
+    Texture[] explosionTextures = new Texture[1]; // يجب تحميل هذه التكستشرات
+
+    // 🆕 متغيرات القياس للأعداء المتحركة
+    final float ENEMY_SCALE = 1.5f; // تكبير الأعداء 1.5 مرة
     JFrame myFrame;
     boolean isPaused = false;
     int timerSeconds = 0;
@@ -88,13 +161,13 @@ public class GameGlListener implements GLEventListener, KeyListener, MouseListen
     Texture gamePausedTexture;
     Texture continueTexture;
     Texture exitTexture;
-
+    private final long ENEMY_SHOOT_INTERVAL = 1500; // العدو يطلق النار كل 1.5 ثانية
     private Texture winTexture;
     private Texture loseTexture;
     private Texture Enter;
     private Texture To;
     private Texture Exit;
-
+    private float playerSpeed = 0.5f;
 
     Texture[] numbersTextures = new Texture[10];
     Texture[] healthImages = new Texture[6];
@@ -131,6 +204,7 @@ public class GameGlListener implements GLEventListener, KeyListener, MouseListen
     int currentFrameIndex = 0;
     long shootingStartTime = 0;
 
+
     ArrayList<Bullet> bullets = new ArrayList<>();
 
     ArrayList<Enemy> enemies = new ArrayList<>();
@@ -152,13 +226,13 @@ public class GameGlListener implements GLEventListener, KeyListener, MouseListen
         this.difficultyLevel = difficulty;
         if (difficulty.equals("Easy")) {
             timerSeconds = 60;
-            spawnInterval = 2500;
+            spawnInterval = 5000;
         } else if (difficulty.equals("Medium")) {
-            timerSeconds = 30;
-            spawnInterval = 1500;
+            timerSeconds = 45;
+            spawnInterval = 3000;
         } else if (difficulty.equals("Hard")) {
-            timerSeconds = 20;
-            spawnInterval = 800;
+            timerSeconds = 30;
+            spawnInterval = 2000;
         }
         GLCapabilities capabilities = new GLCapabilities();
         glCanvas = new GLCanvas(capabilities);
@@ -281,6 +355,23 @@ public class GameGlListener implements GLEventListener, KeyListener, MouseListen
 
             File bFile = new File("Assets/bullet.png");
             if (bFile.exists()) bulletTexture = TextureIO.newTexture(bFile, true);
+
+
+            File expFile = new File("Assets/EnemyAirship/AirshipDeath.png");
+            if (expFile.exists()) {
+                explosionTextures[0] = TextureIO.newTexture(expFile, true);
+            }
+
+            File heliFile = new File("Assets/EnemyHelicopter/EnemyHelicopter.png");
+            if (heliFile.exists()) {
+                helicopterTexture = TextureIO.newTexture(heliFile, true);
+            }
+
+
+            File bombFile = new File("Assets/EnemyHelicopter/HelicopterBullet.png");
+            if (bombFile.exists()) {
+                bombTexture = TextureIO.newTexture(bombFile, true);
+            }
 
         } catch (IOException e) {
             System.err.println(e.getMessage());
@@ -449,12 +540,46 @@ public class GameGlListener implements GLEventListener, KeyListener, MouseListen
     }
 
 
+//    private void drawBackground(GL gl) {
+//        if (backgroundTexture == null) return;
+//        gl.glMatrixMode(GL.GL_PROJECTION);
+//        gl.glPushMatrix();
+//        gl.glLoadIdentity();
+//        gl.glOrtho(0, 1, 0, 1, -1, 1);
+//        gl.glMatrixMode(GL.GL_MODELVIEW);
+//        gl.glPushMatrix();
+//        gl.glLoadIdentity();
+//        gl.glDisable(GL.GL_DEPTH_TEST);
+//
+//        gl.glColor3f(1, 1, 1);
+//        backgroundTexture.enable();
+//        backgroundTexture.bind();
+//
+//        gl.glBegin(GL.GL_QUADS);
+//        gl.glTexCoord2f(0.0f, 0.0f);
+//        gl.glVertex2f(0.0f, 1.0f);
+//        gl.glTexCoord2f(1.0f, 0.0f);
+//        gl.glVertex2f(1.0f, 1.0f);
+//        gl.glTexCoord2f(1.0f, 1.0f);
+//        gl.glVertex2f(1.0f, 0.0f);
+//        gl.glTexCoord2f(0.0f, 1.0f);
+//        gl.glVertex2f(0.0f, 0.0f);
+//        gl.glEnd();
+//
+//        backgroundTexture.disable();
+//        gl.glPopMatrix();
+//        gl.glMatrixMode(GL.GL_PROJECTION);
+//        gl.glPopMatrix();
+//        gl.glMatrixMode(GL.GL_MODELVIEW);
+//    }
+
+
     private void drawBackground(GL gl) {
         if (backgroundTexture == null) return;
         gl.glMatrixMode(GL.GL_PROJECTION);
         gl.glPushMatrix();
         gl.glLoadIdentity();
-        gl.glOrtho(0, 1, 0, 1, -1, 1);
+        gl.glOrtho(0, 100, 0, 100, -1, 1); // تغيير الإحداثيات إلى مقياس اللعبة 0-100
         gl.glMatrixMode(GL.GL_MODELVIEW);
         gl.glPushMatrix();
         gl.glLoadIdentity();
@@ -464,16 +589,24 @@ public class GameGlListener implements GLEventListener, KeyListener, MouseListen
         backgroundTexture.enable();
         backgroundTexture.bind();
 
-        gl.glBegin(GL.GL_QUADS);
-        gl.glTexCoord2f(0.0f, 0.0f);
-        gl.glVertex2f(0.0f, 1.0f);
-        gl.glTexCoord2f(1.0f, 0.0f);
-        gl.glVertex2f(1.0f, 1.0f);
-        gl.glTexCoord2f(1.0f, 1.0f);
-        gl.glVertex2f(1.0f, 0.0f);
-        gl.glTexCoord2f(0.0f, 1.0f);
-        gl.glVertex2f(0.0f, 0.0f);
-        gl.glEnd();
+        // 🆕 عرض الخلفية بتكرار وإزاحة
+        final float BG_WIDTH = 100.0f; // عرض الخلفية يساوي عرض الشاشة 100 وحدة
+
+        // لرسم ثلاث نسخ لضمان تغطية الشاشة عند الإزاحة
+        for (int i = -1; i <= 1; i++) {
+            float currentX = backgroundScrollX + (i * BG_WIDTH);
+
+            gl.glBegin(GL.GL_QUADS);
+            gl.glTexCoord2f(0.0f, 0.0f);
+            gl.glVertex2f(currentX, 100);
+            gl.glTexCoord2f(1.0f, 0.0f);
+            gl.glVertex2f(currentX + BG_WIDTH, 100);
+            gl.glTexCoord2f(1.0f, 1.0f);
+            gl.glVertex2f(currentX + BG_WIDTH, 0);
+            gl.glTexCoord2f(0.0f, 1.0f);
+            gl.glVertex2f(currentX, 0);
+            gl.glEnd();
+        }
 
         backgroundTexture.disable();
         gl.glPopMatrix();
@@ -673,14 +806,17 @@ public class GameGlListener implements GLEventListener, KeyListener, MouseListen
             gl.glDisable(GL.GL_DEPTH_TEST);
 
             if (leftPressed) {
-                playerX -= 0.8f;
+                playerX -= playerSpeed;
                 facingRight = false;
+                backgroundScrollX += PARALLAX_SPEED;
             }
             if (rightPressed) {
-                playerX += 0.8f;
+                playerX += playerSpeed;
                 facingRight = true;
+                backgroundScrollX -= PARALLAX_SPEED;
             }
-
+            if (backgroundScrollX > 100) backgroundScrollX -= 100;
+            if (backgroundScrollX < -100) backgroundScrollX += 100;
             final float MAX_X = 100f - playerWidth;
 
             if (playerX < 0) playerX = 0;
@@ -696,16 +832,173 @@ public class GameGlListener implements GLEventListener, KeyListener, MouseListen
                 }
             }
 
-            spawnEnemies();
+
+            spawnHelecopter();
+            updateHelicopter(gl);
             updateEnemies(gl);
             updateBullets(gl);
             updateEnemyBullets(gl);
+            updateBombs(gl);
+            updateExplosions(gl);
+
             checkCollisions();
 
             animateSprite(gl);
             drawBullets(gl);
             drawEnemies(gl);
             drawEnemyBullets(gl);
+
+            // 🆕 رسم الهليكوبتر والقنابل والانفجارات
+            drawHelicopter(gl);
+            drawBombs(gl);
+            drawExplosions(gl);
+
+
+            spawnEnemies();
+
+
+        }
+    }
+
+
+    // 🆕 تحديث وتوليد الهليكوبتر والقنابل
+    private void updateHelicopter(GL gl) {
+        if (helicopter.active) {
+            if (helicopter.isDropping) {
+                // 🆕 النزول: ننقص قيمة Y
+                if (helicopter.y > helicopter.DROP_Y) {
+                    helicopter.y -= helicopter.speed;
+                } else {
+                    // ... (منطق إطلاق القنبلة)
+                    if (helicopter.y <= helicopter.DROP_Y && helicopter.y > helicopter.DROP_Y - 1.0f) {
+                        helicopterBombs.add(new Bomb(helicopter.x + (helicopter.HELI_HEIGHT / 2), helicopter.y));
+                        helicopter.y -= 2.0f; // تغيير الموقع لتفادي التكرار
+                    }
+                    helicopter.isDropping = false; // البدء في الصعود
+                }
+            } else {
+                // 🆕 الصعود للاختفاء: نزيد قيمة Y
+                helicopter.y += helicopter.speed * 2.0;
+                if (helicopter.y > 115) { // شرط الاختفاء أعلى من الشاشة
+                    helicopter.active = false;
+                }
+            }
+        }
+    }
+
+    // 🆕 تحديث حركة القنابل
+    private void updateBombs(GL gl) {
+        for (Bomb bomb : helicopterBombs) {
+            if (bomb.active) {
+                bomb.y -= bomb.speed;
+
+                // 🆕 التوقف عند مستوى الأرض
+                if (bomb.y < groundLevel) {
+                    bomb.y = groundLevel; // تثبيت الارتفاع
+                    bomb.active = false;
+                    spawnExplosion(bomb.x, groundLevel); // انفجار القنبلة عند الأرض
+                }
+            }
+        }
+        helicopterBombs.removeIf(b -> !b.active);
+    }
+
+    // 🆕 رسم الهليكوبتر (يحتاج تكستشر)
+    private void drawHelicopter(GL gl) {
+        if (!helicopter.active || helicopterTexture == null) return;
+
+        float w = 20; // عرض مناسب للهليكوبتر
+        float h = 15; // طول مناسب للهليكوبتر
+
+        gl.glEnable(GL.GL_BLEND);
+        gl.glBlendFunc(GL.GL_SRC_ALPHA, GL.GL_ONE_MINUS_SRC_ALPHA);
+        gl.glColor3f(1, 1, 1);
+
+        helicopterTexture.enable();
+        helicopterTexture.bind();
+
+        gl.glBegin(GL.GL_QUADS);
+        // الرسم في اتجاه اليمين (نفترض أن الهليكوبتر دائما تواجه اليمين)
+        gl.glTexCoord2f(0.0f, 0.0f);
+        gl.glVertex2f(helicopter.x, helicopter.y + h);
+        gl.glTexCoord2f(1.0f, 0.0f);
+        gl.glVertex2f(helicopter.x + w, helicopter.y + h);
+        gl.glTexCoord2f(1.0f, 1.0f);
+        gl.glVertex2f(helicopter.x + w, helicopter.y);
+        gl.glTexCoord2f(0.0f, 1.0f);
+        gl.glVertex2f(helicopter.x, helicopter.y);
+        gl.glEnd();
+
+        helicopterTexture.disable();
+        gl.glDisable(GL.GL_BLEND);
+    }
+
+    // 🆕 رسم القنابل
+    private void drawBombs(GL gl) {
+        if (bombTexture == null) return;
+
+        gl.glEnable(GL.GL_BLEND);
+        gl.glBlendFunc(GL.GL_SRC_ALPHA, GL.GL_ONE_MINUS_SRC_ALPHA);
+        bombTexture.enable();
+        bombTexture.bind();
+        gl.glColor3f(1, 1, 1);
+
+        for (Bomb b : helicopterBombs) {
+            if (!b.active) continue;
+
+            gl.glBegin(GL.GL_QUADS);
+            gl.glTexCoord2f(0.0f, 0.0f);
+            gl.glVertex2f(b.x, b.y + b.height);
+            gl.glTexCoord2f(1.0f, 0.0f);
+            gl.glVertex2f(b.x + b.width, b.y + b.height);
+            gl.glTexCoord2f(1.0f, 1.0f);
+            gl.glVertex2f(b.x + b.width, b.y);
+            gl.glTexCoord2f(0.0f, 1.0f);
+            gl.glVertex2f(b.x, b.y);
+            gl.glEnd();
+        }
+
+        bombTexture.disable();
+        gl.glDisable(GL.GL_BLEND);
+    }
+
+    // 🆕 تحديث الانفجارات
+    private void updateExplosions(GL gl) {
+        explosions.removeIf(exp -> System.currentTimeMillis() - exp.startTime > exp.DURATION);
+    }
+
+    // 🆕 رسم الانفجارات
+    private void drawExplosions(GL gl) {
+        if (explosionTextures[0] == null) return;
+
+        gl.glEnable(GL.GL_BLEND);
+        explosionTextures[0].enable();
+        explosionTextures[0].bind();
+        gl.glColor3f(1, 1, 1);
+
+        for (Explosion exp : explosions) {
+            if (exp.active) {
+                gl.glBegin(GL.GL_QUADS);
+                gl.glTexCoord2f(0.0f, 0.0f);
+                gl.glVertex2f(exp.x, exp.y + exp.height);
+                gl.glTexCoord2f(1.0f, 0.0f);
+                gl.glVertex2f(exp.x + exp.width, exp.y + exp.height);
+                gl.glTexCoord2f(1.0f, 1.0f);
+                gl.glVertex2f(exp.x + exp.width, exp.y);
+                gl.glTexCoord2f(0.0f, 1.0f);
+                gl.glVertex2f(exp.x, exp.y);
+                gl.glEnd();
+            }
+        }
+        explosionTextures[0].disable();
+        gl.glDisable(GL.GL_BLEND);
+    }
+
+
+    private void spawnHelecopter() {
+        if (System.currentTimeMillis() - lastHeliSpawnTime >= 20000 && !helicopter.active) {
+            helicopter.activate(playerX); // استهداف موقع اللاعب الحالي
+            lastHeliSpawnTime = System.currentTimeMillis();
         }
     }
 
@@ -722,6 +1015,7 @@ public class GameGlListener implements GLEventListener, KeyListener, MouseListen
     }
 
     private void updateEnemies(GL gl) {
+        long currentTime = System.currentTimeMillis();
         for (int i = 0; i < enemies.size(); i++) {
             Enemy e = enemies.get(i);
             if (!e.active || e.state == 2) continue;
@@ -734,11 +1028,24 @@ public class GameGlListener implements GLEventListener, KeyListener, MouseListen
             }
 
             e.state = 0;
-            float speed = (e.type == 0) ? 0.3f : 0.2f;
+            float speed = (e.type == 0) ? 0.08f : 0.2f;
             if (e.x < playerX) {
                 e.x += speed;
             } else {
                 e.x -= speed;
+            }
+
+
+            if (currentTime - e.lastShotTime >= ENEMY_SHOOT_INTERVAL) {
+
+                boolean reversedDirection = !e.facingRight; // <-- هذا هو التعديل الأساسي
+                // تحديد نقطة انطلاق الطلقة
+                float startX = reversedDirection ? e.x + e.width : e.x - 5;
+                float startY = e.y + (e.height / 2.0f);
+
+                // إضافة طلقة عدو جديدة
+                enemyBullets.add(new EnemyBullet(startX, startY, reversedDirection));
+                e.lastShotTime = currentTime;
             }
         }
     }
@@ -785,8 +1092,50 @@ public class GameGlListener implements GLEventListener, KeyListener, MouseListen
 
                 eb.active = false;
                 playerHealth -= 10;
+                // 🆕 تقليل النتيجة عند الإصابة برصاص العدو
+                score -= 5;
+                if (score < 0) score = 0;
             }
         }
+
+//         🆕 فحص اصطدام الأعداء باللاعب (الانفجار الانتحاري)
+        for (Enemy e : enemies) {
+            if (e.active && e.state != 2 &&
+                    e.x < playerX + playerWidth &&
+                    e.x + e.width > playerX &&
+                    e.y < playerY + playerHeight &&
+                    e.y + e.height > playerY) {
+                // العدو اصطدم باللاعب
+                e.active = false; // تدمير العدو
+
+                // إضافة الانفجار عند موقع اللاعب
+                spawnExplosion(playerX + playerWidth / 2, playerY);
+
+                playerHealth -= 30; // ضرر كبير
+                score -= 20; // خسارة نقاط
+                if (score < 0) score = 0;
+            }
+        }
+
+        // 🆕 فحص اصطدام القنابل باللاعب
+        for (Bomb bomb : helicopterBombs) {
+            if (bomb.active &&
+                    bomb.x < playerX + playerWidth &&
+                    bomb.x + bomb.width > playerX &&
+                    bomb.y < playerY + playerHeight &&
+                    bomb.y + bomb.height > playerY) {
+                bomb.active = false;
+                spawnExplosion(bomb.x, bomb.y);
+                playerHealth -= 30;
+                score -= 10;
+                if (score < 0) score = 0;
+            }
+        }
+    }
+
+    private void spawnExplosion(float x, float y) {
+        explosions.add(new Explosion(x, y));
+        // يمكنك هنا إضافة صوت انفجار: Sound.playSound("Assets/explosion.wav");
     }
 
 
@@ -795,12 +1144,14 @@ public class GameGlListener implements GLEventListener, KeyListener, MouseListen
         gl.glBlendFunc(GL.GL_SRC_ALPHA, GL.GL_ONE_MINUS_SRC_ALPHA);
         gl.glColor3f(1, 1, 1);
 
+
         for (int i = 0; i < enemies.size(); i++) {
             Enemy e = enemies.get(i);
             if (!e.active) continue;
 
-            Texture tex = null;
+            // ... (Texture selection logic)
 
+            Texture tex = null;
             if (e.state == 2) {
                 tex = (e.type == 0) ? enemy_zombi[1] : enemy1_Scintest[1];
                 if (System.currentTimeMillis() - e.deathStartTime > 500) {
@@ -813,24 +1164,54 @@ public class GameGlListener implements GLEventListener, KeyListener, MouseListen
             }
 
             if (tex != null) {
+
+                // 🆕 تطبيق مصفوفة التحويل (Scaling)
+                gl.glMatrixMode(GL.GL_MODELVIEW);
+                gl.glPushMatrix();
+
+                // الانتقال إلى نقطة الأصل للعدو
+                gl.glTranslatef(e.x, e.y, 0);
+
+                // تطبيق القياس (Scaling)
+                gl.glScalef(ENEMY_SCALE, ENEMY_SCALE, 1.0f);
+
+                // الآن يتم رسم الـ Quad في الإحداثيات المحلية (0, 0)
+
                 tex.enable();
                 tex.bind();
                 gl.glBegin(GL.GL_QUADS);
+
+                // **ملاحظة:** نستخدم الأبعاد الأصلية (width و height) هنا لأن القياس مطبق بالفعل
+                float w = e.width;
+                float h = e.height;
+
                 if (e.facingRight) {
-                    gl.glTexCoord2f(0.0f, 0.0f); gl.glVertex2f(e.x, e.y + e.height);
-                    gl.glTexCoord2f(1.0f, 0.0f); gl.glVertex2f(e.x + e.width, e.y + e.height);
-                    gl.glTexCoord2f(1.0f, 1.0f); gl.glVertex2f(e.x + e.width, e.y);
-                    gl.glTexCoord2f(0.0f, 1.0f); gl.glVertex2f(e.x, e.y);
+                    gl.glTexCoord2f(0.0f, 0.0f);
+                    gl.glVertex2f(0.0f, h);
+                    gl.glTexCoord2f(1.0f, 0.0f);
+                    gl.glVertex2f(w, h);
+                    gl.glTexCoord2f(1.0f, 1.0f);
+                    gl.glVertex2f(w, 0.0f);
+                    gl.glTexCoord2f(0.0f, 1.0f);
+                    gl.glVertex2f(0.0f, 0.0f);
                 } else {
-                    gl.glTexCoord2f(1.0f, 0.0f); gl.glVertex2f(e.x, e.y + e.height);
-                    gl.glTexCoord2f(0.0f, 0.0f); gl.glVertex2f(e.x + e.width, e.y + e.height);
-                    gl.glTexCoord2f(0.0f, 1.0f); gl.glVertex2f(e.x + e.width, e.y);
-                    gl.glTexCoord2f(1.0f, 1.0f); gl.glVertex2f(e.x, e.y);
+                    gl.glTexCoord2f(1.0f, 0.0f);
+                    gl.glVertex2f(0.0f, h);
+                    gl.glTexCoord2f(0.0f, 0.0f);
+                    gl.glVertex2f(w, h);
+                    gl.glTexCoord2f(0.0f, 1.0f);
+                    gl.glVertex2f(w, 0.0f);
+                    gl.glTexCoord2f(1.0f, 1.0f);
+                    gl.glVertex2f(0.0f, 0.0f);
                 }
                 gl.glEnd();
                 tex.disable();
+
+                // 🆕 استعادة المصفوفة
+                gl.glPopMatrix();
             }
         }
+
         enemies.removeIf(e -> !e.active);
         gl.glDisable(GL.GL_BLEND);
     }
@@ -847,10 +1228,14 @@ public class GameGlListener implements GLEventListener, KeyListener, MouseListen
         for (EnemyBullet b : enemyBullets) {
             if (!b.active) continue;
             gl.glBegin(GL.GL_QUADS);
-            gl.glTexCoord2f(0.0f, 0.0f); gl.glVertex2f(b.x, b.y + b.height);
-            gl.glTexCoord2f(1.0f, 0.0f); gl.glVertex2f(b.x + b.width, b.y + b.height);
-            gl.glTexCoord2f(1.0f, 1.0f); gl.glVertex2f(b.x + b.width, b.y);
-            gl.glTexCoord2f(0.0f, 1.0f); gl.glVertex2f(b.x, b.y);
+            gl.glTexCoord2f(0.0f, 0.0f);
+            gl.glVertex2f(b.x, b.y + b.height);
+            gl.glTexCoord2f(1.0f, 0.0f);
+            gl.glVertex2f(b.x + b.width, b.y + b.height);
+            gl.glTexCoord2f(1.0f, 1.0f);
+            gl.glVertex2f(b.x + b.width, b.y);
+            gl.glTexCoord2f(0.0f, 1.0f);
+            gl.glVertex2f(b.x, b.y);
             gl.glEnd();
         }
         tex.disable();
@@ -877,10 +1262,14 @@ public class GameGlListener implements GLEventListener, KeyListener, MouseListen
         gl.glBegin(GL.GL_QUADS);
         for (Bullet b : bullets) {
             if (b.active) {
-                gl.glTexCoord2f(0.0f, 0.0f); gl.glVertex2f(b.x, b.y + b.height);
-                gl.glTexCoord2f(1.0f, 0.0f); gl.glVertex2f(b.x + b.width, b.y + b.height);
-                gl.glTexCoord2f(1.0f, 1.0f); gl.glVertex2f(b.x + b.width, b.y);
-                gl.glTexCoord2f(0.0f, 1.0f); gl.glVertex2f(b.x, b.y);
+                gl.glTexCoord2f(0.0f, 0.0f);
+                gl.glVertex2f(b.x, b.y + b.height);
+                gl.glTexCoord2f(1.0f, 0.0f);
+                gl.glVertex2f(b.x + b.width, b.y + b.height);
+                gl.glTexCoord2f(1.0f, 1.0f);
+                gl.glVertex2f(b.x + b.width, b.y);
+                gl.glTexCoord2f(0.0f, 1.0f);
+                gl.glVertex2f(b.x, b.y);
             }
         }
         gl.glEnd();
@@ -1072,6 +1461,6 @@ public class GameGlListener implements GLEventListener, KeyListener, MouseListen
     }
 
     @Override
-    public void mouseExited(MouseEvent e){
-}
+    public void mouseExited(MouseEvent e) {
+    }
 }
