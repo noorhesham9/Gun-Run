@@ -12,8 +12,8 @@ public class GameApp {
     private static final Dimension MUTE_BUTTON_SIZE = new Dimension(50, 50);
     private static final String MUTE_ON_PATH = "Assets/MuteOn (1).png";
     private static final String MUTE_OFF_PATH = "Assets/MuteOff (1).png";
-
-    private static final Dimension BUTTON_SIZE = new Dimension(280, 50);
+    private static final Dimension BUTTON_SIZE = new Dimension(280, 40);
+    private static final Dimension Large_BUTTON_SIZE = new Dimension(380, 70);
 
     public static void main(String[] args) {
         new GameApp();
@@ -65,11 +65,11 @@ public class GameApp {
         }
     }
 
-    private JButton createStyledImageButton(String path) {
+    private JButton createStyledImageButton(String path, Dimension size) {
         JButton btn = new JButton();
-        btn.setPreferredSize(BUTTON_SIZE);
-        btn.setMaximumSize(BUTTON_SIZE);
-        btn.setMinimumSize(BUTTON_SIZE);
+        btn.setPreferredSize(size); // 💡 استخدام المعامل size
+        btn.setMaximumSize(size);   // 💡 استخدام المعامل size
+        btn.setMinimumSize(size);   // 💡 استخدام المعامل size
         btn.setAlignmentX(Component.CENTER_ALIGNMENT);
         btn.setOpaque(false);
         btn.setContentAreaFilled(false);
@@ -79,7 +79,7 @@ public class GameApp {
         try {
             Image img = ImageIO.read(new File(path));
             if (img != null) {
-                Image scaledImg = img.getScaledInstance(BUTTON_SIZE.width, BUTTON_SIZE.height, Image.SCALE_SMOOTH);
+                Image scaledImg = img.getScaledInstance(size.width, size.height, Image.SCALE_SMOOTH);
                 btn.setIcon(new ImageIcon(scaledImg));
             } else {
                 btn.setText("Error loading: " + path);
@@ -139,9 +139,9 @@ public class GameApp {
         centerPanel.add(gameTitle);
         centerPanel.add(Box.createVerticalStrut(50));
 
-        JButton startButton = createStyledImageButton("Assets/button/Start (1).png");
-        JButton scoreBoard = createStyledImageButton("Assets/button/Scoreboard (1).png");
-        JButton instructions = createStyledImageButton("Assets/button/Instructions (1).png");
+        JButton startButton = createStyledImageButton("Assets/button/Start (1).png", BUTTON_SIZE);
+        JButton scoreBoard = createStyledImageButton("Assets/button/Scoreboard (1).png", Large_BUTTON_SIZE);
+        JButton instructions = createStyledImageButton("Assets/button/Instructions (1).png", Large_BUTTON_SIZE);
 
         instructions.addActionListener(e -> {
             JOptionPane.showMessageDialog(frame,
@@ -243,9 +243,9 @@ public class GameApp {
         centerPanel.add(gameTitle);
         centerPanel.add(Box.createVerticalStrut(50));
 
-        JButton singlePlayer = createStyledImageButton("Assets/button/single player (1).png");
-        JButton multiplePlayers = createStyledImageButton("Assets/button/Multi player (1).png");
-        JButton back = createStyledImageButton("Assets/button/Back (1).png");
+        JButton singlePlayer = createStyledImageButton("Assets/button/single player (1).png", Large_BUTTON_SIZE);
+        JButton multiplePlayers = createStyledImageButton("Assets/button/Multi player (1).png", Large_BUTTON_SIZE);
+        JButton back = createStyledImageButton("Assets/button/Back (1).png", BUTTON_SIZE);
 
         singlePlayer.addActionListener(e -> {
             Sound.playSound("Assets/mixkit-drums-of-war-2784.wav");
@@ -384,14 +384,14 @@ public class GameApp {
             centerPanel.add(Box.createVerticalStrut(30));
         }
 
-        JButton nextBtn = createStyledImageButton("Assets/button/Next (1).png");
+        JButton nextBtn = createStyledImageButton("Assets/button/Next (1).png", BUTTON_SIZE);
         nextBtn.addActionListener(nextStepAction);
         nextBtn.setForeground(Color.WHITE);
 
         centerPanel.add(nextBtn);
         centerPanel.add(Box.createVerticalStrut(20));
 
-        JButton backBtn = createStyledImageButton("Assets/button/Back (1).png");
+        JButton backBtn = createStyledImageButton("Assets/button/Back (1).png", BUTTON_SIZE);
         backBtn.addActionListener(e -> {
             Sound.playSound("Assets/mixkit-shotgun-long-pump-1666.wav");
             nameFrame.dispose();
@@ -457,10 +457,10 @@ public class GameApp {
         centerPanel.add(gameTitle);
         centerPanel.add(Box.createVerticalStrut(50));
 
-        JButton easyBtn = createStyledImageButton("Assets/button/esay (1).png");
-        JButton mediumBtn = createStyledImageButton("Assets/button/Medium (1).png");
-        JButton hardBtn = createStyledImageButton("Assets/button/Hard (1).png");
-        JButton backBtn = createStyledImageButton("Assets/button/Back (1).png");
+        JButton easyBtn = createStyledImageButton("Assets/button/esay (1).png", BUTTON_SIZE);
+        JButton mediumBtn = createStyledImageButton("Assets/button/Medium (1).png", BUTTON_SIZE);
+        JButton hardBtn = createStyledImageButton("Assets/button/Hard (1).png", BUTTON_SIZE);
+        JButton backBtn = createStyledImageButton("Assets/button/Back (1).png", BUTTON_SIZE);
 
         boolean isMulti = (players == 2);
 
@@ -539,7 +539,7 @@ public class GameApp {
                     centerPanel.add(Box.createVerticalStrut(10));
                 });
 
-        JButton btnBack = createStyledImageButton("Assets/button/Back (1).png");
+        JButton btnBack = createStyledImageButton("Assets/button/Back (1).png", BUTTON_SIZE);
         btnBack.addActionListener(e -> {
             Sound.playSound("Assets/mixkit-shotgun-long-pump-1666.wav");
             Sound.stop();
